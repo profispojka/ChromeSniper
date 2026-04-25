@@ -6,61 +6,24 @@
         ctx.save();
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        if (a.kind === 'highlight') {
-            ctx.fillStyle = a.color;
-            ctx.globalAlpha = 0.32;
-            ctx.fillRect(a.x * scale, a.y * scale, a.w * scale, a.h * scale);
-            ctx.restore();
-            return;
-        }
         ctx.strokeStyle = a.color;
         ctx.fillStyle = a.color;
         ctx.lineWidth = Math.max(1, a.width * scale);
-        if (a.kind === 'pen') {
-            if (a.points.length === 1) {
-                const [x, y] = a.points[0];
-                ctx.beginPath();
-                ctx.arc(x * scale, y * scale, (a.width * scale) / 2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            else {
-                ctx.beginPath();
-                const [x0, y0] = a.points[0];
-                ctx.moveTo(x0 * scale, y0 * scale);
-                for (let i = 1; i < a.points.length; i++) {
-                    const [x, y] = a.points[i];
-                    ctx.lineTo(x * scale, y * scale);
-                }
-                ctx.stroke();
-            }
-        }
-        else if (a.kind === 'rect') {
-            ctx.strokeRect(a.x * scale, a.y * scale, a.w * scale, a.h * scale);
-        }
-        else if (a.kind === 'arrow') {
-            const [fx, fy] = a.from;
-            const [tx, ty] = a.to;
-            const sx = fx * scale, sy = fy * scale, ex = tx * scale, ey = ty * scale;
-            const dx = ex - sx, dy = ey - sy;
-            const len = Math.hypot(dx, dy);
-            if (len < 0.5) {
-                ctx.restore();
-                return;
-            }
-            const ah = Math.min(18 * scale, len * 0.4);
-            const angle = Math.atan2(dy, dx);
-            const baseX = ex - Math.cos(angle) * ah * 0.6;
-            const baseY = ey - Math.sin(angle) * ah * 0.6;
+        if (a.points.length === 1) {
+            const [x, y] = a.points[0];
             ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.lineTo(baseX, baseY);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(ex, ey);
-            ctx.lineTo(ex - Math.cos(angle - Math.PI / 6) * ah, ey - Math.sin(angle - Math.PI / 6) * ah);
-            ctx.lineTo(ex - Math.cos(angle + Math.PI / 6) * ah, ey - Math.sin(angle + Math.PI / 6) * ah);
-            ctx.closePath();
+            ctx.arc(x * scale, y * scale, (a.width * scale) / 2, 0, Math.PI * 2);
             ctx.fill();
+        }
+        else {
+            ctx.beginPath();
+            const [x0, y0] = a.points[0];
+            ctx.moveTo(x0 * scale, y0 * scale);
+            for (let i = 1; i < a.points.length; i++) {
+                const [x, y] = a.points[i];
+                ctx.lineTo(x * scale, y * scale);
+            }
+            ctx.stroke();
         }
         ctx.restore();
     };
@@ -90,7 +53,6 @@
         let color = COLORS[0];
         const annotations = [];
         let inProgress = null;
-        let rectAnchor = null;
         let activePointerId = null;
         const callbacks = new Set();
         const fireChange = () => {
@@ -131,41 +93,16 @@
                 canvas.setPointerCapture(e.pointerId);
             }
             catch { }
-            if (tool === 'pen') {
-                inProgress = { kind: 'pen', points: [[x, y]], color, width: STROKE_WIDTH };
-            }
-            else if (tool === 'arrow') {
-                inProgress = { kind: 'arrow', from: [x, y], to: [x, y], color, width: STROKE_WIDTH };
-            }
-            else if (tool === 'rect') {
-                rectAnchor = [x, y];
-                inProgress = { kind: 'rect', x, y, w: 0, h: 0, color, width: STROKE_WIDTH };
-            }
-            else if (tool === 'highlight') {
-                rectAnchor = [x, y];
-                inProgress = { kind: 'highlight', x, y, w: 0, h: 0, color };
-            }
+            inProgress = { kind: 'pen', points: [[x, y]], color, width: STROKE_WIDTH };
             redraw();
         };
         const onPointerMove = (e) => {
             if (e.pointerId !== activePointerId || !inProgress)
                 return;
             const [x, y] = localCoords(e);
-            if (inProgress.kind === 'pen') {
-                const last = inProgress.points[inProgress.points.length - 1];
-                if (Math.hypot(x - last[0], y - last[1]) >= 1) {
-                    inProgress.points.push([x, y]);
-                }
-            }
-            else if (inProgress.kind === 'arrow') {
-                inProgress.to = [x, y];
-            }
-            else if ((inProgress.kind === 'rect' || inProgress.kind === 'highlight') && rectAnchor) {
-                const [ax, ay] = rectAnchor;
-                inProgress.x = Math.min(ax, x);
-                inProgress.y = Math.min(ay, y);
-                inProgress.w = Math.abs(x - ax);
-                inProgress.h = Math.abs(y - ay);
+            const last = inProgress.points[inProgress.points.length - 1];
+            if (Math.hypot(x - last[0], y - last[1]) >= 1) {
+                inProgress.points.push([x, y]);
             }
             redraw();
         };
@@ -173,24 +110,10 @@
             if (!inProgress)
                 return;
             if (commit) {
-                let keep = true;
-                if (inProgress.kind === 'rect' || inProgress.kind === 'highlight') {
-                    if (inProgress.w < 4 || inProgress.h < 4)
-                        keep = false;
-                }
-                else if (inProgress.kind === 'arrow') {
-                    const dx = inProgress.to[0] - inProgress.from[0];
-                    const dy = inProgress.to[1] - inProgress.from[1];
-                    if (Math.hypot(dx, dy) < 6)
-                        keep = false;
-                }
-                if (keep) {
-                    annotations.push(inProgress);
-                    fireChange();
-                }
+                annotations.push(inProgress);
+                fireChange();
             }
             inProgress = null;
-            rectAnchor = null;
             activePointerId = null;
             redraw();
         };
@@ -225,10 +148,10 @@
             color = COLORS[(i + 1) % COLORS.length];
             return color;
         };
-        const undo = () => {
+        const clear = () => {
             if (annotations.length === 0)
                 return false;
-            annotations.pop();
+            annotations.length = 0;
             redraw();
             fireChange();
             return true;
@@ -255,7 +178,7 @@
             setColor,
             getColor: () => color,
             cycleColor,
-            undo,
+            clear,
             hasItems: () => annotations.length > 0,
             getAnnotations: () => annotations.slice(),
             destroy,

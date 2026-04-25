@@ -1,3 +1,6 @@
+import { recognize, type OcrLine } from './ocr.js';
+import { browserLanguage, detectLanguage, tesseractToBcp47, translate } from './translate.js';
+
 (() => {
   type CaptureMessage = { type: 'captureVisibleTab' };
   type CaptureResponse =
@@ -56,12 +59,8 @@
   let pickerSwatchEl: HTMLDivElement | null = null;
   let pickerCleanup: (() => void) | null = null;
 
-  type AnnotationTool = 'none' | 'pen' | 'arrow' | 'rect' | 'highlight';
-  type Annotation =
-    | { kind: 'pen'; points: [number, number][]; color: string; width: number }
-    | { kind: 'arrow'; from: [number, number]; to: [number, number]; color: string; width: number }
-    | { kind: 'rect'; x: number; y: number; w: number; h: number; color: string; width: number }
-    | { kind: 'highlight'; x: number; y: number; w: number; h: number; color: string };
+  type AnnotationTool = 'none' | 'pen';
+  type Annotation = { kind: 'pen'; points: [number, number][]; color: string; width: number };
   type AnnotationLayer = {
     canvas: HTMLCanvasElement;
     setTool: (t: AnnotationTool) => void;
@@ -69,7 +68,7 @@
     setColor: (c: string) => void;
     getColor: () => string;
     cycleColor: () => string;
-    undo: () => boolean;
+    clear: () => boolean;
     hasItems: () => boolean;
     getAnnotations: () => Annotation[];
     destroy: () => void;
@@ -1359,28 +1358,13 @@
           <circle cx="11" cy="11" r="2"/>
         </svg>
       `;
-      const arrowSvg = `
+      const trashSvg = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-          <line x1="7" y1="17" x2="17" y2="7"/>
-          <polyline points="9 7 17 7 17 15"/>
-        </svg>
-      `;
-      const rectSvg = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-          <rect x="4" y="4" width="16" height="16" rx="1"/>
-        </svg>
-      `;
-      const highlightSvg = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9 11l-4 4v4h4l4-4"/>
-          <path d="M22 4l-3-3-9 9 3 3 9-9z"/>
-          <line x1="13" y1="6" x2="18" y2="11"/>
-        </svg>
-      `;
-      const undoSvg = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-          <polyline points="3 7 3 13 9 13"/>
-          <path d="M3 13a9 9 0 1 0 3-7"/>
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/>
+          <path d="M14 11v6"/>
+          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
         </svg>
       `;
 
@@ -1416,9 +1400,6 @@
       };
 
       annotRow.appendChild(makeToolButton(penSvg, 'Tužka (P)', 'pen'));
-      annotRow.appendChild(makeToolButton(arrowSvg, 'Šipka (A)', 'arrow'));
-      annotRow.appendChild(makeToolButton(rectSvg, 'Obdélník (R)', 'rect'));
-      annotRow.appendChild(makeToolButton(highlightSvg, 'Highlight (H)', 'highlight'));
 
       const colorBtn = document.createElement('button');
       colorBtn.setAttribute('aria-label', 'Barva (cyklí)');
@@ -1471,29 +1452,21 @@
       });
       annotRow.appendChild(colorBtn);
 
-      const undoBtn = makeIconButton(undoSvg, 'Zpět (⌘Z)', () => {
-        layer.undo();
+      const clearBtn = makeIconButton(trashSvg, 'Smazat vše', () => {
+        layer.clear();
       });
-      annotRow.appendChild(undoBtn);
+      annotRow.appendChild(clearBtn);
 
       container.appendChild(annotRow);
 
       const onAnnotKey = (e: KeyboardEvent) => {
         const tag = (document.activeElement as HTMLElement | null)?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-        if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
-          e.preventDefault();
-          layer.undo();
-          return;
-        }
         if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
         const k = e.key.toLowerCase();
         let next: AnnotationTool | null = null;
         if (k === 'v') next = 'none';
         else if (k === 'p') next = 'pen';
-        else if (k === 'a') next = 'arrow';
-        else if (k === 'r') next = 'rect';
-        else if (k === 'h') next = 'highlight';
         if (next !== null) {
           e.preventDefault();
           layer.setTool(next);
