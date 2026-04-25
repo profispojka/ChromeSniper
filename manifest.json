@@ -3,8 +3,8 @@
   "name": "Drag Square Drawer",
   "version": "1.0",
   "description": "Při každém tažení myší nakreslí čtverec.",
-  "permissions": ["tabs"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": ["tabs", "storage", "clipboardWrite"],
+  "host_permissions": ["<all_urls>", "https://0x0.st/*", "https://catbox.moe/*"],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -25,7 +25,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["dist/content.js"],
+      "js": ["dist/qr.js", "dist/content.js"],
       "run_at": "document_idle"
     }
   ]
