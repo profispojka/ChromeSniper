@@ -95,7 +95,11 @@
   };
 
   chrome.runtime.onMessage.addListener(
-    (msg: Message, sender, sendResponse: (response: CaptureResponse | UploadResponse) => void) => {
+    (
+      msg: Message,
+      sender,
+      sendResponse: (response: CaptureResponse | UploadResponse) => void,
+    ) => {
       if (msg?.type === 'captureVisibleTab') {
         return handleCapture(sender, sendResponse as (r: CaptureResponse) => void);
       }
@@ -106,4 +110,15 @@
       return undefined;
     },
   );
+
+  chrome.commands?.onCommand?.addListener?.(async (command) => {
+    if (command !== 'capture-full-page') return;
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+      await chrome.tabs.sendMessage(tab.id, { type: 'startFullPageCapture' });
+    } catch (err) {
+      console.warn('capture-full-page command failed', err);
+    }
+  });
 })();

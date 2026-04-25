@@ -17,6 +17,16 @@
       "32": "icons/icon-32.png",
       "48": "icons/icon-48.png",
       "128": "icons/icon-128.png"
+    },
+    "default_popup": "dist/popup.html"
+  },
+  "commands": {
+    "capture-full-page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
+      "description": "Snímek celé stránky"
     }
   },
   "background": {
@@ -25,7 +35,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["lib/qrcode.js", "dist/annotations.js", "dist/content.js"],
+      "js": ["lib/qrcode.js", "dist/annotations.js", "dist/fullpage.js", "dist/content.js"],
       "run_at": "document_idle"
     }
   ]

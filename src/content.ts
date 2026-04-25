@@ -1,6 +1,3 @@
-import { recognize, type OcrLine } from './ocr.js';
-import { browserLanguage, detectLanguage, tesseractToBcp47, translate } from './translate.js';
-
 (() => {
   type CaptureMessage = { type: 'captureVisibleTab' };
   type CaptureResponse =
@@ -81,6 +78,31 @@ import { browserLanguage, detectLanguage, tesseractToBcp47, translate } from './
   };
   const annotationsApi = (window as unknown as { __dsdAnnotations?: AnnotationsAPI }).__dsdAnnotations;
   let currentLayer: AnnotationLayer | null = null;
+
+  type FullPageAPI = {
+    run: () => Promise<void>;
+    isInFlight: () => boolean;
+  };
+  const fullPageApi = (window as unknown as { __dsdFullPage?: FullPageAPI }).__dsdFullPage;
+
+  const startFullPageCapture = () => {
+    if (!fullPageApi) {
+      console.warn('Full page capture API not loaded');
+      return;
+    }
+    if (document.body.style.transform !== '') {
+      showToast('Nejdřív zavřete zoom (Esc)');
+      return;
+    }
+    void fullPageApi.run();
+  };
+
+  chrome.runtime.onMessage.addListener((msg: unknown) => {
+    if (typeof msg === 'object' && msg !== null && (msg as { type?: string }).type === 'startFullPageCapture') {
+      startFullPageCapture();
+    }
+    return undefined;
+  });
 
   const makeSquare = (x: number, y: number): HTMLDivElement => {
     const sq = document.createElement('div');
@@ -1126,6 +1148,10 @@ import { browserLanguage, detectLanguage, tesseractToBcp47, translate } from './
     }
   };
 
+  const translateRect = (_sq: HTMLDivElement, _btn: HTMLButtonElement) => {
+    showToast('Překlad zatím nedostupný');
+  };
+
   const addControls = (sq: HTMLDivElement, scale: number) => {
     const container = document.createElement('div');
     container.style.cssText = `
@@ -1205,6 +1231,16 @@ import { browserLanguage, detectLanguage, tesseractToBcp47, translate } from './
         <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/>
       </svg>
     `;
+    const translateSvg = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 8h6"/>
+        <path d="M8 5v3"/>
+        <path d="M5 14c0 0 2 4 6 4"/>
+        <path d="M11 14c0 0-2 4-6 4"/>
+        <path d="M14 21l4-9 4 9"/>
+        <path d="M15.5 17h5"/>
+      </svg>
+    `;
     const closeSvg = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <line x1="6" y1="6" x2="18" y2="18"/>
@@ -1221,6 +1257,9 @@ import { browserLanguage, detectLanguage, tesseractToBcp47, translate } from './
     primaryRow.appendChild(makeIconButton(shareSvg, 'Sdílet / stáhnout', () => shareRect(sq)));
     primaryRow.appendChild(makeIconButton(linkSvg, 'Nahrát a zkopírovat odkaz', () => uploadRect(sq)));
     primaryRow.appendChild(makeIconButton(qrSvg, 'QR kód stránky (Q)', () => void openQrModal()));
+    let translateBtn: HTMLButtonElement;
+    translateBtn = makeIconButton(translateSvg, 'Přeložit text v obrázku', () => translateRect(sq, translateBtn));
+    primaryRow.appendChild(translateBtn);
 
     let pickerBtn: HTMLButtonElement | null = null;
     if (pickerAvailable) {
@@ -1511,6 +1550,8 @@ import { browserLanguage, detectLanguage, tesseractToBcp47, translate } from './
     document.body.style.transformOrigin = `${cx}px ${cy}px`;
     document.body.style.transition = 'transform 0.4s ease';
     document.body.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
     freezeAllScrollables();
     window.addEventListener('wheel', blockScroll, { passive: false, capture: true });
     window.addEventListener('touchmove', blockScroll, { passive: false, capture: true });

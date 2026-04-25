@@ -1,6 +1,5 @@
 import { build, context } from 'esbuild';
-import { cp, mkdir, rm } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { cp } from 'node:fs/promises';
 
 const watch = process.argv.includes('--watch');
 
@@ -16,27 +15,14 @@ const common = {
 const entries = [
   { entryPoints: ['src/content.ts'], outfile: 'dist/content.js' },
   { entryPoints: ['src/background.ts'], outfile: 'dist/background.js' },
+  { entryPoints: ['src/annotations.ts'], outfile: 'dist/annotations.js' },
+  { entryPoints: ['src/fullpage.ts'], outfile: 'dist/fullpage.js' },
+  { entryPoints: ['src/popup.ts'], outfile: 'dist/popup.js' },
 ];
 
 async function copyAssets() {
-  const dest = 'dist/lib/tesseract';
-  if (existsSync(dest)) await rm(dest, { recursive: true });
-  await mkdir(dest, { recursive: true });
-  await cp('node_modules/tesseract.js/dist/worker.min.js', `${dest}/worker.min.js`);
-  await mkdir(`${dest}/core`, { recursive: true });
-  for (const file of [
-    'tesseract-core.wasm',
-    'tesseract-core.wasm.js',
-    'tesseract-core-simd.wasm',
-    'tesseract-core-simd.wasm.js',
-    'tesseract-core-simd-lstm.wasm',
-    'tesseract-core-simd-lstm.wasm.js',
-    'tesseract-core-lstm.wasm',
-    'tesseract-core-lstm.wasm.js',
-  ]) {
-    await cp(`node_modules/tesseract.js-core/${file}`, `${dest}/core/${file}`);
-  }
-  console.log(`copied tesseract assets → ${dest}`);
+  await cp('src/popup.html', 'dist/popup.html');
+  console.log('copied popup.html → dist/popup.html');
 }
 
 await copyAssets();
