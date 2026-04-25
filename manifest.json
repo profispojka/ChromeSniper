@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Drag Square Drawer",
+  "version": "1.0",
+  "description": "Při každém tažení myší nakreslí čtverec.",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
