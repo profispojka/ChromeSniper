@@ -2,7 +2,12 @@
 (() => {
     const UPLOAD_CONSENT_KEY = 'uploadConsentGiven';
     const QR_STRIP_TRACKING_KEY = 'qrStripTracking';
-    const qr = window.__dsdQR;
+    const qrcode = window.qrcode;
+    if (qrcode) {
+        const utf8 = qrcode.stringToBytesFuncs['UTF-8'];
+        if (utf8)
+            qrcode.stringToBytes = utf8;
+    }
     let qrModalOpen = false;
     const overlay = document.createElement('div');
     overlay.style.cssText = `
@@ -604,8 +609,8 @@
             return urlStr;
         }
     };
-    const renderQRToCanvas = (canvas, modules, scale, margin = 4) => {
-        const size = modules.length;
+    const renderQRToCanvas = (canvas, qr, scale, margin = 4) => {
+        const size = qr.getModuleCount();
         const totalModules = size + 2 * margin;
         canvas.width = totalModules * scale;
         canvas.height = totalModules * scale;
@@ -616,9 +621,8 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#000000';
         for (let r = 0; r < size; r++) {
-            const row = modules[r];
             for (let c = 0; c < size; c++) {
-                if (row[c]) {
+                if (qr.isDark(r, c)) {
                     ctx.fillRect((c + margin) * scale, (r + margin) * scale, scale, scale);
                 }
             }
@@ -642,7 +646,7 @@
     const openQrModal = async () => {
         if (qrModalOpen)
             return;
-        if (!qr) {
+        if (!qrcode) {
             showToast('QR encoder nedostupný');
             return;
         }
@@ -790,11 +794,13 @@
             currentUrl = stripCheckbox.checked ? stripTracking(rawUrl) : rawUrl;
             urlBox.textContent = currentUrl;
             try {
-                const modules = qr.encode(currentUrl);
+                const qr = qrcode(0, 'M');
+                qr.addData(currentUrl, 'Byte');
+                qr.make();
                 const targetPx = 280;
-                const totalModules = modules.length + 8;
+                const totalModules = qr.getModuleCount() + 8;
                 const scale = Math.max(2, Math.floor((targetPx * (window.devicePixelRatio || 1)) / totalModules));
-                renderQRToCanvas(canvas, modules, scale);
+                renderQRToCanvas(canvas, qr, scale);
             }
             catch (err) {
                 console.error('QR encode failed', err);
@@ -1331,11 +1337,21 @@
     const cursorStyle = document.createElement('style');
     cursorStyle.textContent = `html.dsd-aiming, html.dsd-aiming * { cursor: crosshair !important; }`;
     (document.head || document.documentElement).appendChild(cursorStyle);
+    const isZoomActive = () => document.body.style.transform !== '' && overlay.style.pointerEvents === 'auto';
     document.addEventListener('keydown', (e) => {
+        if (qrModalOpen)
+            return;
         if (e.key === 'Escape')
             closeZoom();
         if (e.key === 'Shift')
             document.documentElement.classList.add('dsd-aiming');
+        if ((e.key === 'q' || e.key === 'Q') && !e.metaKey && !e.ctrlKey && !e.altKey && isZoomActive()) {
+            const tag = e.target?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable)
+                return;
+            e.preventDefault();
+            void openQrModal();
+        }
     }, true);
     document.addEventListener('keyup', (e) => {
         if (e.key === 'Shift')

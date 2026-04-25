@@ -20,7 +20,21 @@
     scrollLeft: number;
   };
 
-  const qr = (window as unknown as { __dsdQR?: { encode: (text: string) => boolean[][] } }).__dsdQR;
+  type QrInstance = {
+    addData: (data: string, mode?: 'Byte' | 'Numeric' | 'Alphanumeric' | 'Kanji') => void;
+    make: () => void;
+    getModuleCount: () => number;
+    isDark: (row: number, col: number) => boolean;
+  };
+  type QrFactory = ((typeNumber: number, errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H') => QrInstance) & {
+    stringToBytes: (s: string) => number[];
+    stringToBytesFuncs: { [k: string]: ((s: string) => number[]) | undefined };
+  };
+  const qrcode = (window as unknown as { qrcode?: QrFactory }).qrcode;
+  if (qrcode) {
+    const utf8 = qrcode.stringToBytesFuncs['UTF-8'];
+    if (utf8) qrcode.stringToBytes = utf8;
+  }
   let qrModalOpen = false;
 
   const overlay = document.createElement('div');
@@ -41,6 +55,33 @@
   let pickerEnabled = false;
   let pickerSwatchEl: HTMLDivElement | null = null;
   let pickerCleanup: (() => void) | null = null;
+
+  type AnnotationTool = 'none' | 'pen' | 'arrow' | 'rect' | 'highlight';
+  type Annotation =
+    | { kind: 'pen'; points: [number, number][]; color: string; width: number }
+    | { kind: 'arrow'; from: [number, number]; to: [number, number]; color: string; width: number }
+    | { kind: 'rect'; x: number; y: number; w: number; h: number; color: string; width: number }
+    | { kind: 'highlight'; x: number; y: number; w: number; h: number; color: string };
+  type AnnotationLayer = {
+    canvas: HTMLCanvasElement;
+    setTool: (t: AnnotationTool) => void;
+    getTool: () => AnnotationTool;
+    setColor: (c: string) => void;
+    getColor: () => string;
+    cycleColor: () => string;
+    undo: () => boolean;
+    hasItems: () => boolean;
+    getAnnotations: () => Annotation[];
+    destroy: () => void;
+    onChange: (cb: () => void) => () => void;
+  };
+  type AnnotationsAPI = {
+    mount: (sq: HTMLDivElement, opts: { cssWidth: number; cssHeight: number }) => AnnotationLayer;
+    render: (ctx: CanvasRenderingContext2D, list: Annotation[], scale: number) => void;
+    COLORS: string[];
+  };
+  const annotationsApi = (window as unknown as { __dsdAnnotations?: AnnotationsAPI }).__dsdAnnotations;
+  let currentLayer: AnnotationLayer | null = null;
 
   const makeSquare = (x: number, y: number): HTMLDivElement => {
     const sq = document.createElement('div');
@@ -112,6 +153,10 @@
     if (pickerCleanup) {
       pickerCleanup();
       pickerCleanup = null;
+    }
+    if (currentLayer) {
+      currentLayer.destroy();
+      currentLayer = null;
     }
     overlay.replaceChildren();
     overlay.style.pointerEvents = 'none';
@@ -223,7 +268,7 @@
     return btn;
   };
 
-  const captureRect = async (rect: DOMRect): Promise<Blob> => {
+  const captureRect = async (rect: DOMRect, annotations?: Annotation[]): Promise<Blob> => {
     overlay.style.visibility = 'hidden';
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     let dataUrl: string;
@@ -255,6 +300,9 @@
       Math.round(rect.width * dpr), Math.round(rect.height * dpr),
       0, 0, canvas.width, canvas.height,
     );
+    if (annotations && annotations.length && annotationsApi) {
+      annotationsApi.render(ctx, annotations, dpr);
+    }
     return await new Promise<Blob>((res, rej) => {
       canvas.toBlob((blob) => {
         if (blob) res(blob);
@@ -322,7 +370,7 @@
 
   const copyRect = async (sq: HTMLDivElement) => {
     try {
-      const blob = await captureRect(sq.getBoundingClientRect());
+      const blob = await captureRect(sq.getBoundingClientRect(), currentLayer?.getAnnotations());
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/png': blob }),
       ]);
@@ -336,7 +384,7 @@
   const shareRect = async (sq: HTMLDivElement) => {
     let blob: Blob;
     try {
-      blob = await captureRect(sq.getBoundingClientRect());
+      blob = await captureRect(sq.getBoundingClientRect(), currentLayer?.getAnnotations());
     } catch (err) {
       console.error('Capture failed', err);
       alert('Nepodařilo se pořídit screenshot: ' + (err instanceof Error ? err.message : String(err)));
@@ -592,7 +640,7 @@
     }
     let blob: Blob;
     try {
-      blob = await captureRect(sq.getBoundingClientRect());
+      blob = await captureRect(sq.getBoundingClientRect(), currentLayer?.getAnnotations());
     } catch (err) {
       console.error('Capture failed', err);
       showToast('Nepodařilo se pořídit screenshot');
@@ -641,8 +689,8 @@
     }
   };
 
-  const renderQRToCanvas = (canvas: HTMLCanvasElement, modules: boolean[][], scale: number, margin = 4): void => {
-    const size = modules.length;
+  const renderQRToCanvas = (canvas: HTMLCanvasElement, qr: QrInstance, scale: number, margin = 4): void => {
+    const size = qr.getModuleCount();
     const totalModules = size + 2 * margin;
     canvas.width = totalModules * scale;
     canvas.height = totalModules * scale;
@@ -652,9 +700,8 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#000000';
     for (let r = 0; r < size; r++) {
-      const row = modules[r]!;
       for (let c = 0; c < size; c++) {
-        if (row[c]) {
+        if (qr.isDark(r, c)) {
           ctx.fillRect((c + margin) * scale, (r + margin) * scale, scale, scale);
         }
       }
@@ -677,7 +724,7 @@
 
   const openQrModal = async () => {
     if (qrModalOpen) return;
-    if (!qr) {
+    if (!qrcode) {
       showToast('QR encoder nedostupný');
       return;
     }
@@ -839,11 +886,13 @@
       currentUrl = stripCheckbox.checked ? stripTracking(rawUrl) : rawUrl;
       urlBox.textContent = currentUrl;
       try {
-        const modules = qr.encode(currentUrl);
+        const qr = qrcode(0, 'M');
+        qr.addData(currentUrl, 'Byte');
+        qr.make();
         const targetPx = 280;
-        const totalModules = modules.length + 8;
+        const totalModules = qr.getModuleCount() + 8;
         const scale = Math.max(2, Math.floor((targetPx * (window.devicePixelRatio || 1)) / totalModules));
-        renderQRToCanvas(canvas, modules, scale);
+        renderQRToCanvas(canvas, qr, scale);
       } catch (err) {
         console.error('QR encode failed', err);
         const ctx = canvas.getContext('2d');
@@ -1088,8 +1137,9 @@
       transform-origin: top center;
       pointer-events: auto;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 2px;
+      gap: 4px;
       padding: 4px;
       background: rgba(20, 20, 22, 0.75);
       backdrop-filter: blur(24px) saturate(180%);
@@ -1103,6 +1153,9 @@
       opacity: 0;
       transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     `;
+    const primaryRow = document.createElement('div');
+    primaryRow.style.cssText = `display: flex; align-items: center; gap: 2px;`;
+    container.appendChild(primaryRow);
 
     const sep = () => {
       const s = document.createElement('div');
@@ -1165,21 +1218,21 @@
     const origH = sqRectInit.height / scale;
     const pickerAvailable = origW >= 10 && origH >= 10;
 
-    container.appendChild(makeIconButton(copySvg, 'Kopírovat (⌘C)', () => copyRect(sq)));
-    container.appendChild(makeIconButton(shareSvg, 'Sdílet / stáhnout', () => shareRect(sq)));
-    container.appendChild(makeIconButton(linkSvg, 'Nahrát a zkopírovat odkaz', () => uploadRect(sq)));
-    container.appendChild(makeIconButton(qrSvg, 'QR kód stránky (Q)', () => void openQrModal()));
+    primaryRow.appendChild(makeIconButton(copySvg, 'Kopírovat (⌘C)', () => copyRect(sq)));
+    primaryRow.appendChild(makeIconButton(shareSvg, 'Sdílet / stáhnout', () => shareRect(sq)));
+    primaryRow.appendChild(makeIconButton(linkSvg, 'Nahrát a zkopírovat odkaz', () => uploadRect(sq)));
+    primaryRow.appendChild(makeIconButton(qrSvg, 'QR kód stránky (Q)', () => void openQrModal()));
 
     let pickerBtn: HTMLButtonElement | null = null;
     if (pickerAvailable) {
       pickerBtn = makeIconButton(pickerSvg, 'Color picker (I, Alt+klik)', () => {
         setPickerActive(!pickerEnabled);
       });
-      container.appendChild(pickerBtn);
+      primaryRow.appendChild(pickerBtn);
     }
 
-    container.appendChild(sep());
-    container.appendChild(makeIconButton(closeSvg, 'Zavřít (Esc)', closeZoom));
+    primaryRow.appendChild(sep());
+    primaryRow.appendChild(makeIconButton(closeSvg, 'Zavřít (Esc)', closeZoom));
 
     const setPickerActive = (on: boolean) => {
       pickerEnabled = on;
@@ -1279,6 +1332,180 @@
         pickerImageData = null;
         pickerEnabled = false;
         pickerSwatchEl = null;
+      };
+    }
+
+    const annotAvailable = !!annotationsApi && origW >= 16 && origH >= 16;
+    if (annotAvailable && annotationsApi) {
+      const cssWidth = parseFloat(sq.style.width) || sqRectInit.width;
+      const cssHeight = parseFloat(sq.style.height) || sqRectInit.height;
+      const layer = annotationsApi.mount(sq, { cssWidth, cssHeight });
+      currentLayer = layer;
+
+      const annotRow = document.createElement('div');
+      annotRow.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding-top: 4px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      `;
+
+      const penSvg = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+          <path d="M2 2l7.586 7.586"/>
+          <circle cx="11" cy="11" r="2"/>
+        </svg>
+      `;
+      const arrowSvg = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <line x1="7" y1="17" x2="17" y2="7"/>
+          <polyline points="9 7 17 7 17 15"/>
+        </svg>
+      `;
+      const rectSvg = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="16" height="16" rx="1"/>
+        </svg>
+      `;
+      const highlightSvg = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 11l-4 4v4h4l4-4"/>
+          <path d="M22 4l-3-3-9 9 3 3 9-9z"/>
+          <line x1="13" y1="6" x2="18" y2="11"/>
+        </svg>
+      `;
+      const undoSvg = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <polyline points="3 7 3 13 9 13"/>
+          <path d="M3 13a9 9 0 1 0 3-7"/>
+        </svg>
+      `;
+
+      const toolButtons: { tool: AnnotationTool; btn: HTMLButtonElement }[] = [];
+      const refreshActiveTool = () => {
+        const cur = layer.getTool();
+        for (const { tool, btn } of toolButtons) {
+          const active = tool === cur;
+          btn.style.background = active ? 'rgba(10, 132, 255, 0.85)' : 'transparent';
+          btn.style.color = active ? 'white' : 'rgba(255, 255, 255, 0.85)';
+        }
+      };
+      const makeToolButton = (svg: string, title: string, tool: AnnotationTool): HTMLButtonElement => {
+        const btn = makeIconButton(svg, title, () => {
+          const next = layer.getTool() === tool ? 'none' : tool;
+          layer.setTool(next);
+          refreshActiveTool();
+        });
+        btn.addEventListener('mouseenter', () => {
+          if (layer.getTool() === tool) {
+            btn.style.background = 'rgba(10, 132, 255, 0.95)';
+            btn.style.color = 'white';
+          }
+        });
+        btn.addEventListener('mouseleave', () => {
+          if (layer.getTool() === tool) {
+            btn.style.background = 'rgba(10, 132, 255, 0.85)';
+            btn.style.color = 'white';
+          }
+        });
+        toolButtons.push({ tool, btn });
+        return btn;
+      };
+
+      annotRow.appendChild(makeToolButton(penSvg, 'Tužka (P)', 'pen'));
+      annotRow.appendChild(makeToolButton(arrowSvg, 'Šipka (A)', 'arrow'));
+      annotRow.appendChild(makeToolButton(rectSvg, 'Obdélník (R)', 'rect'));
+      annotRow.appendChild(makeToolButton(highlightSvg, 'Highlight (H)', 'highlight'));
+
+      const colorBtn = document.createElement('button');
+      colorBtn.setAttribute('aria-label', 'Barva (cyklí)');
+      colorBtn.dataset.tooltip = 'Barva (cyklí)';
+      colorBtn.style.cssText = `
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        line-height: 0;
+        transition: background 0.15s ease, transform 0.15s ease;
+      `;
+      const colorDot = document.createElement('span');
+      const refreshColorDot = () => {
+        colorDot.style.background = layer.getColor();
+      };
+      colorDot.style.cssText = `
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, 0.6);
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+      `;
+      refreshColorDot();
+      colorBtn.appendChild(colorDot);
+      colorBtn.addEventListener('mouseenter', () => {
+        colorBtn.style.background = 'rgba(255, 255, 255, 0.12)';
+      });
+      colorBtn.addEventListener('mouseleave', () => {
+        colorBtn.style.background = 'transparent';
+      });
+      colorBtn.addEventListener('mousedown', () => {
+        colorBtn.style.transform = 'scale(0.92)';
+      });
+      colorBtn.addEventListener('mouseup', () => {
+        colorBtn.style.transform = 'scale(1)';
+      });
+      colorBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        layer.cycleColor();
+        refreshColorDot();
+      });
+      annotRow.appendChild(colorBtn);
+
+      const undoBtn = makeIconButton(undoSvg, 'Zpět (⌘Z)', () => {
+        layer.undo();
+      });
+      annotRow.appendChild(undoBtn);
+
+      container.appendChild(annotRow);
+
+      const onAnnotKey = (e: KeyboardEvent) => {
+        const tag = (document.activeElement as HTMLElement | null)?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+          e.preventDefault();
+          layer.undo();
+          return;
+        }
+        if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+        const k = e.key.toLowerCase();
+        let next: AnnotationTool | null = null;
+        if (k === 'v') next = 'none';
+        else if (k === 'p') next = 'pen';
+        else if (k === 'a') next = 'arrow';
+        else if (k === 'r') next = 'rect';
+        else if (k === 'h') next = 'highlight';
+        if (next !== null) {
+          e.preventDefault();
+          layer.setTool(next);
+          refreshActiveTool();
+        }
+      };
+      document.addEventListener('keydown', onAnnotKey, true);
+
+      const origDestroy = layer.destroy;
+      layer.destroy = () => {
+        document.removeEventListener('keydown', onAnnotKey, true);
+        origDestroy();
       };
     }
 
@@ -1387,9 +1614,19 @@
   cursorStyle.textContent = `html.dsd-aiming, html.dsd-aiming * { cursor: crosshair !important; }`;
   (document.head || document.documentElement).appendChild(cursorStyle);
 
+  const isZoomActive = (): boolean =>
+    document.body.style.transform !== '' && overlay.style.pointerEvents === 'auto';
+
   document.addEventListener('keydown', (e) => {
+    if (qrModalOpen) return;
     if (e.key === 'Escape') closeZoom();
     if (e.key === 'Shift') document.documentElement.classList.add('dsd-aiming');
+    if ((e.key === 'q' || e.key === 'Q') && !e.metaKey && !e.ctrlKey && !e.altKey && isZoomActive()) {
+      const tag = (e.target as Element | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement | null)?.isContentEditable) return;
+      e.preventDefault();
+      void openQrModal();
+    }
   }, true);
 
   document.addEventListener('keyup', (e) => {
