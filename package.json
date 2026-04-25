@@ -1,0 +1,13 @@
+{
+  "name": "drag-square-drawer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.40",
+    "typescript": "^6.0.3"
+  }
+}
