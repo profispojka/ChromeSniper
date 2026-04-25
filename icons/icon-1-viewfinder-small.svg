@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgs" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#26262a"/>
+      <stop offset="1" stop-color="#101012"/>
+    </linearGradient>
+    <radialGradient id="glows" cx="0.5" cy="0.45" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- background plate -->
+  <rect width="128" height="128" rx="28" fill="url(#bgs)"/>
+  <rect width="128" height="128" rx="28" fill="url(#glows)"/>
+  <rect x="0.5" y="0.5" width="127" height="127" rx="27.5" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+
+  <!-- bigger magnifier, no corner brackets -->
+  <g transform="translate(56 56)">
+    <!-- handle -->
+    <line x1="22" y1="22" x2="42" y2="42"
+          stroke="#ffffff" stroke-opacity="0.95" stroke-width="14" stroke-linecap="round"/>
+    <!-- glass -->
+    <circle cx="0" cy="0" r="30" fill="#1a1a1c" stroke="#ffffff" stroke-opacity="0.95" stroke-width="9"/>
+    <!-- plus -->
+    <path d="M-13 0 H13 M0 -13 V13" stroke="#ffffff" stroke-opacity="0.95" stroke-width="6.5" stroke-linecap="round"/>
+  </g>
+</svg>

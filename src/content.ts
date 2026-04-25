@@ -19,12 +19,7 @@
     pointer-events: none;
     z-index: 2147483647;
   `;
-  const mountOverlay = () => {
-    if (document.body) document.body.appendChild(overlay);
-    else document.documentElement.appendChild(overlay);
-  };
-  if (document.body) mountOverlay();
-  else document.addEventListener('DOMContentLoaded', mountOverlay, { once: true });
+  document.documentElement.appendChild(overlay);
 
   let startX = 0;
   let startY = 0;
@@ -334,14 +329,13 @@
     URL.revokeObjectURL(url);
   };
 
-  const addControls = (sq: HTMLDivElement, scale: number) => {
-    const inv = 1 / scale;
+  const addControls = (sq: HTMLDivElement, _scale: number) => {
     const container = document.createElement('div');
     container.style.cssText = `
       position: absolute;
       left: 50%;
       top: 100%;
-      transform: translate(-50%, ${10 * inv}px) scale(${inv});
+      transform: translate(-50%, 10px);
       transform-origin: top center;
       pointer-events: auto;
       display: flex;
@@ -406,7 +400,7 @@
         container.style.top = 'auto';
         container.style.bottom = '100%';
         container.style.transformOrigin = 'bottom center';
-        container.style.transform = `translate(-50%, ${-10 * inv}px) scale(${inv})`;
+        container.style.transform = `translate(-50%, -10px)`;
       }
       container.style.opacity = '1';
     });
@@ -416,23 +410,29 @@
     if (width < 5 || height < 5) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const scrollEl = document.scrollingElement || document.documentElement;
-    const sx = scrollEl.scrollLeft || window.scrollX || 0;
-    const sy = scrollEl.scrollTop || window.scrollY || 0;
-    const cx = left + width / 2 + sx;
-    const cy = top + height / 2 + sy;
+    const br = document.body.getBoundingClientRect();
+    const cx = left + width / 2 - br.left;
+    const cy = top + height / 2 - br.top;
     const scale = Math.min(vw / width, vh / height) * 0.8;
-    const tx = vw / 2 - cx;
-    const ty = vh / 2 - cy;
+    const tx = vw / 2 - (left + width / 2);
+    const ty = vh / 2 - (top + height / 2);
+
     document.body.style.transformOrigin = `${cx}px ${cy}px`;
     document.body.style.transition = 'transform 0.4s ease';
     document.body.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
     freezeAllScrollables();
     window.addEventListener('wheel', blockScroll, { passive: false, capture: true });
     window.addEventListener('touchmove', blockScroll, { passive: false, capture: true });
     window.addEventListener('keydown', blockScrollKeys, true);
+
+    const newW = width * scale;
+    const newH = height * scale;
+    sq.style.transition = 'left 0.4s ease, top 0.4s ease, width 0.4s ease, height 0.4s ease';
+    sq.style.left = `${vw / 2 - newW / 2}px`;
+    sq.style.top = `${vh / 2 - newH / 2}px`;
+    sq.style.width = `${newW}px`;
+    sq.style.height = `${newH}px`;
+
     sq.style.pointerEvents = 'auto';
     overlay.style.pointerEvents = 'auto';
     addControls(sq, scale);
@@ -443,6 +443,7 @@
   });
 
   const finish = (commit: boolean) => {
+    window.removeEventListener('scroll', lockScrollDuringDrag, true);
     if (commit && currentSquare) {
       const r = currentSquare.getBoundingClientRect();
       const badge = currentSquare.querySelector<HTMLDivElement>('[data-role="size-badge"]');
@@ -453,9 +454,20 @@
     activePointerId = null;
   };
 
+  let dragInitialScrollX = 0;
+  let dragInitialScrollY = 0;
+  const lockScrollDuringDrag = () => {
+    if (currentSquare && (window.scrollX !== dragInitialScrollX || window.scrollY !== dragInitialScrollY)) {
+      window.scrollTo(dragInitialScrollX, dragInitialScrollY);
+    }
+  };
+
   document.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || !e.shiftKey) return;
     closeZoom();
+    dragInitialScrollX = window.scrollX;
+    dragInitialScrollY = window.scrollY;
+    window.addEventListener('scroll', lockScrollDuringDrag, true);
     startX = e.clientX;
     startY = e.clientY;
     currentSquare = makeSquare(startX, startY);
