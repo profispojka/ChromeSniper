@@ -2,7 +2,7 @@
 (() => {
   // src/annotations.ts
   (() => {
-    const COLORS = ["#FF3B30", "#FFCC00", "#34C759", "#0A84FF", "#FFFFFF"];
+    const PEN_COLOR = "#FF3B30";
     const STROKE_WIDTH = 3;
     const drawOne = (ctx, a, scale) => {
       ctx.save();
@@ -50,7 +50,6 @@
       sq.appendChild(canvas);
       const ctx = canvas.getContext("2d");
       let tool = "none";
-      let color = COLORS[0];
       const annotations = [];
       let inProgress = null;
       let activePointerId = null;
@@ -87,7 +86,7 @@
           canvas.setPointerCapture(e.pointerId);
         } catch {
         }
-        inProgress = { kind: "pen", points: [[x, y]], color, width: STROKE_WIDTH };
+        inProgress = { kind: "pen", points: [[x, y]], color: PEN_COLOR, width: STROKE_WIDTH };
         redraw();
       };
       const onPointerMove = (e) => {
@@ -131,14 +130,6 @@
         canvas.style.pointerEvents = t === "none" ? "none" : "auto";
         canvas.style.cursor = t === "none" ? "" : "crosshair";
       };
-      const setColor = (c) => {
-        color = c;
-      };
-      const cycleColor = () => {
-        const i = COLORS.indexOf(color);
-        color = COLORS[(i + 1) % COLORS.length];
-        return color;
-      };
       const clear = () => {
         if (annotations.length === 0) return false;
         annotations.length = 0;
@@ -165,9 +156,6 @@
         canvas,
         setTool,
         getTool: () => tool,
-        setColor,
-        getColor: () => color,
-        cycleColor,
         clear,
         hasItems: () => annotations.length > 0,
         getAnnotations: () => annotations.slice(),
@@ -175,7 +163,7 @@
         onChange
       };
     };
-    const api = { mount, render, COLORS };
+    const api = { mount, render };
     window.__dsdAnnotations = api;
   })();
 })();

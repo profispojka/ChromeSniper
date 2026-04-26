@@ -7,9 +7,6 @@
     canvas: HTMLCanvasElement;
     setTool: (t: Tool) => void;
     getTool: () => Tool;
-    setColor: (c: string) => void;
-    getColor: () => string;
-    cycleColor: () => string;
     clear: () => boolean;
     hasItems: () => boolean;
     getAnnotations: () => Annotation[];
@@ -20,10 +17,9 @@
   type AnnotationsAPI = {
     mount: (sq: HTMLDivElement, opts: { cssWidth: number; cssHeight: number }) => AnnotationLayer;
     render: (ctx: CanvasRenderingContext2D, list: Annotation[], scale: number) => void;
-    COLORS: string[];
   };
 
-  const COLORS = ['#FF3B30', '#FFCC00', '#34C759', '#0A84FF', '#FFFFFF'];
+  const PEN_COLOR = '#FF3B30';
   const STROKE_WIDTH = 3;
 
   const drawOne = (ctx: CanvasRenderingContext2D, a: Annotation, scale: number): void => {
@@ -76,7 +72,6 @@
 
     const ctx = canvas.getContext('2d');
     let tool: Tool = 'none';
-    let color: string = COLORS[0]!;
     const annotations: Annotation[] = [];
     let inProgress: Annotation | null = null;
     let activePointerId: number | null = null;
@@ -110,7 +105,7 @@
       const [x, y] = localCoords(e);
       activePointerId = e.pointerId;
       try { canvas.setPointerCapture(e.pointerId); } catch {}
-      inProgress = { kind: 'pen', points: [[x, y]], color, width: STROKE_WIDTH };
+      inProgress = { kind: 'pen', points: [[x, y]], color: PEN_COLOR, width: STROKE_WIDTH };
       redraw();
     };
 
@@ -162,13 +157,6 @@
       canvas.style.cursor = t === 'none' ? '' : 'crosshair';
     };
 
-    const setColor = (c: string) => { color = c; };
-    const cycleColor = (): string => {
-      const i = COLORS.indexOf(color);
-      color = COLORS[(i + 1) % COLORS.length]!;
-      return color;
-    };
-
     const clear = (): boolean => {
       if (annotations.length === 0) return false;
       annotations.length = 0;
@@ -198,9 +186,6 @@
       canvas,
       setTool,
       getTool: () => tool,
-      setColor,
-      getColor: () => color,
-      cycleColor,
       clear,
       hasItems: () => annotations.length > 0,
       getAnnotations: () => annotations.slice(),
@@ -209,6 +194,6 @@
     };
   };
 
-  const api: AnnotationsAPI = { mount, render, COLORS };
+  const api: AnnotationsAPI = { mount, render };
   (window as unknown as { __dsdAnnotations?: AnnotationsAPI }).__dsdAnnotations = api;
 })();

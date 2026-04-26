@@ -475,6 +475,31 @@
     });
   };
 
+  const blobToDataUrl = (blob: Blob): Promise<string> =>
+    new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = () => rej(r.error ?? new Error('blob read failed'));
+      r.readAsDataURL(blob);
+    });
+
+  const saveFullPageToHistory = async (result: CaptureResult): Promise<void> => {
+    try {
+      const dataUrl = await blobToDataUrl(result.blob);
+      await chrome.runtime.sendMessage({
+        type: 'saveScreenshot',
+        dataUrl,
+        pageUrl: location.href,
+        pageTitle: document.title || location.hostname,
+        kind: 'fullpage',
+        width: result.width,
+        height: result.height,
+      });
+    } catch (err) {
+      console.warn('Save fullpage to history failed', err);
+    }
+  };
+
   let inFlight = false;
 
   const runFullPageCapture = async (): Promise<void> => {
@@ -496,6 +521,7 @@
         isCancelled: () => cancelled,
       });
       progress.close();
+      void saveFullPageToHistory(result);
       showResultModal(result);
     } catch (err) {
       progress.close();

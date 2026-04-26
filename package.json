@@ -1,10 +1,12 @@
 {
-  "name": "drag-square-drawer",
+  "name": "snipper",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "build": "node build.mjs",
+    "build:prod": "node build.mjs --prod",
     "watch": "node build.mjs --watch",
+    "package": "node build.mjs --prod --package",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

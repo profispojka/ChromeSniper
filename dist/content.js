@@ -2,7 +2,6 @@
 (() => {
   // src/content.ts
   (() => {
-    const UPLOAD_CONSENT_KEY = "uploadConsentGiven";
     const QR_STRIP_TRACKING_KEY = "qrStripTracking";
     const qrcode = window.qrcode;
     if (qrcode) {
@@ -29,6 +28,40 @@
     const annotationsApi = window.__dsdAnnotations;
     let currentLayer = null;
     const fullPageApi = window.__dsdFullPage;
+    const historyApi = window.__dsdHistory;
+    let zoomSessionSavedToHistory = false;
+    let deepZoomExit = null;
+    const blobToDataUrlInline = (blob) => new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = () => rej(r.error ?? new Error("blob read failed"));
+      r.readAsDataURL(blob);
+    });
+    const saveBlobToHistory = async (blob, kind, width, height) => {
+      try {
+        const dataUrl = await blobToDataUrlInline(blob);
+        await chrome.runtime.sendMessage({
+          type: "saveScreenshot",
+          dataUrl,
+          pageUrl: location.href,
+          pageTitle: document.title || location.hostname,
+          kind,
+          width,
+          height
+        });
+      } catch (err) {
+        console.warn("Save to history failed", err);
+      }
+    };
+    const maybeSaveRegionToHistory = (blob, sq) => {
+      if (zoomSessionSavedToHistory) return;
+      zoomSessionSavedToHistory = true;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = sq.getBoundingClientRect();
+      const w = Math.round(rect.width * dpr);
+      const h = Math.round(rect.height * dpr);
+      void saveBlobToHistory(blob, "region", w, h);
+    };
     const startFullPageCapture = () => {
       if (!fullPageApi) {
         console.warn("Full page capture API not loaded");
@@ -40,9 +73,33 @@
       }
       void fullPageApi.run();
     };
+    const startGlobalColorPicker = async () => {
+      const Ctor = window.EyeDropper;
+      if (!Ctor) {
+        showToast("Color picker nen\xED v tomto prohl\xED\u017Ee\u010Di podporov\xE1n");
+        return;
+      }
+      try {
+        const result = await new Ctor().open();
+        const hex = result.sRGBHex;
+        try {
+          await navigator.clipboard.writeText(hex);
+          showToast(`${hex} zkop\xEDrov\xE1no`);
+        } catch {
+          showToast(hex);
+        }
+      } catch {
+      }
+    };
     chrome.runtime.onMessage.addListener((msg) => {
-      if (typeof msg === "object" && msg !== null && msg.type === "startFullPageCapture") {
+      const type = typeof msg === "object" && msg !== null ? msg.type : void 0;
+      if (type === "startFullPageCapture") {
         startFullPageCapture();
+      } else if (type === "openHistory") {
+        if (historyApi) void historyApi.open();
+        else console.warn("History API not loaded");
+      } else if (type === "startColorPicker") {
+        void startGlobalColorPicker();
       }
       return void 0;
     });
@@ -108,6 +165,7 @@
       }
     };
     const closeZoom = () => {
+      deepZoomExit = null;
       if (pickerCleanup) {
         pickerCleanup();
         pickerCleanup = null;
@@ -327,6 +385,7 @@
           new ClipboardItem({ "image/png": blob })
         ]);
         showToast("Screenshot zkop\xEDrov\xE1n do schr\xE1nky");
+        maybeSaveRegionToHistory(blob, sq);
       } catch (err) {
         console.error("Copy failed", err);
         alert("Kop\xEDrov\xE1n\xED selhalo: " + (err instanceof Error ? err.message : String(err)));
@@ -341,6 +400,7 @@
         alert("Nepoda\u0159ilo se po\u0159\xEDdit screenshot: " + (err instanceof Error ? err.message : String(err)));
         return;
       }
+      maybeSaveRegionToHistory(blob, sq);
       const file = new File([blob], `screenshot-${Date.now()}.png`, { type: "image/png" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
@@ -359,247 +419,6 @@
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    };
-    const showToastWithCopyAction = (text, valueToCopy) => {
-      const toast = document.createElement("div");
-      toast.style.cssText = `
-      position: fixed;
-      top: 32px;
-      left: 50%;
-      transform: translate(-50%, -12px);
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(20, 20, 22, 0.85);
-      backdrop-filter: blur(20px) saturate(160%);
-      -webkit-backdrop-filter: blur(20px) saturate(160%);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: rgba(255, 255, 255, 0.95);
-      padding: 10px 14px;
-      border-radius: 12px;
-      font: 500 13px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-      z-index: 2147483647;
-      cursor: pointer;
-      pointer-events: auto;
-      opacity: 0;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      max-width: min(80vw, 520px);
-    `;
-      toast.textContent = text;
-      document.documentElement.appendChild(toast);
-      requestAnimationFrame(() => {
-        toast.style.opacity = "1";
-        toast.style.transform = "translate(-50%, 0)";
-      });
-      let dismissed = false;
-      const dismiss = () => {
-        if (dismissed) return;
-        dismissed = true;
-        toast.style.opacity = "0";
-        toast.style.transform = "translate(-50%, -12px)";
-        setTimeout(() => toast.remove(), 250);
-      };
-      toast.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(valueToCopy);
-          toast.textContent = "Zkop\xEDrov\xE1no do schr\xE1nky";
-          setTimeout(dismiss, 1200);
-        } catch (err) {
-          console.error("Clipboard write failed", err);
-        }
-      });
-      setTimeout(dismiss, 8e3);
-    };
-    const blobToDataUrl = (blob) => new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(r.result);
-      r.onerror = () => rej(r.error);
-      r.readAsDataURL(blob);
-    });
-    const getUploadConsent = async () => {
-      try {
-        const stored = await chrome.storage.local.get(UPLOAD_CONSENT_KEY);
-        return stored[UPLOAD_CONSENT_KEY] === true;
-      } catch {
-        return false;
-      }
-    };
-    const setUploadConsent = async () => {
-      try {
-        await chrome.storage.local.set({ [UPLOAD_CONSENT_KEY]: true });
-      } catch {
-      }
-    };
-    const confirmUpload = () => new Promise((resolve) => {
-      const backdrop = document.createElement("div");
-      backdrop.style.cssText = `
-        position: fixed;
-        inset: 0;
-        z-index: 2147483647;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        opacity: 0;
-        transition: opacity 0.18s ease;
-        pointer-events: auto;
-      `;
-      const dialog = document.createElement("div");
-      dialog.style.cssText = `
-        max-width: 380px;
-        margin: 16px;
-        padding: 20px;
-        background: rgba(28, 28, 30, 0.95);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 14px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        color: rgba(255, 255, 255, 0.95);
-        font: 400 14px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        transform: scale(0.96);
-        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      `;
-      const title = document.createElement("div");
-      title.textContent = "Nahr\xE1t na 0x0.st?";
-      title.style.cssText = `
-        font: 600 16px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        margin-bottom: 8px;
-      `;
-      const body = document.createElement("div");
-      body.textContent = "Screenshot bude nahr\xE1n na ve\u0159ejnou slu\u017Ebu 0x0.st. Kdokoliv s odkazem ho uvid\xED. Pokra\u010Dovat?";
-      body.style.cssText = `
-        color: rgba(255, 255, 255, 0.7);
-        margin-bottom: 16px;
-      `;
-      const rememberRow = document.createElement("label");
-      rememberRow.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 16px;
-        cursor: pointer;
-        user-select: none;
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.75);
-      `;
-      const remember = document.createElement("input");
-      remember.type = "checkbox";
-      remember.checked = true;
-      remember.style.cssText = `accent-color: rgba(10, 132, 255, 1); cursor: pointer;`;
-      const rememberText = document.createElement("span");
-      rememberText.textContent = "P\u0159\xED\u0161t\u011B se neptat";
-      rememberRow.appendChild(remember);
-      rememberRow.appendChild(rememberText);
-      const buttons = document.createElement("div");
-      buttons.style.cssText = `
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-      `;
-      const mkButton = (label, primary) => {
-        const b = document.createElement("button");
-        b.textContent = label;
-        b.style.cssText = `
-          padding: 8px 14px;
-          border-radius: 8px;
-          border: 1px solid ${primary ? "transparent" : "rgba(255, 255, 255, 0.12)"};
-          background: ${primary ? "rgba(10, 132, 255, 1)" : "rgba(255, 255, 255, 0.06)"};
-          color: ${primary ? "white" : "rgba(255, 255, 255, 0.95)"};
-          font: 500 13px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          cursor: pointer;
-          transition: background 0.15s ease;
-        `;
-        b.addEventListener("mouseenter", () => {
-          b.style.background = primary ? "rgba(10, 132, 255, 0.85)" : "rgba(255, 255, 255, 0.12)";
-        });
-        b.addEventListener("mouseleave", () => {
-          b.style.background = primary ? "rgba(10, 132, 255, 1)" : "rgba(255, 255, 255, 0.06)";
-        });
-        return b;
-      };
-      const cancelBtn = mkButton("Zru\u0161it", false);
-      const confirmBtn = mkButton("Nahr\xE1t", true);
-      let settled = false;
-      const close = (result) => {
-        if (settled) return;
-        settled = true;
-        if (result && remember.checked) void setUploadConsent();
-        backdrop.style.opacity = "0";
-        dialog.style.transform = "scale(0.96)";
-        setTimeout(() => backdrop.remove(), 180);
-        document.removeEventListener("keydown", onKey, true);
-        resolve(result);
-      };
-      cancelBtn.addEventListener("click", () => close(false));
-      confirmBtn.addEventListener("click", () => close(true));
-      backdrop.addEventListener("click", (e) => {
-        if (e.target === backdrop) close(false);
-      });
-      const onKey = (e) => {
-        if (e.key === "Escape") {
-          e.stopPropagation();
-          close(false);
-        } else if (e.key === "Enter") {
-          e.stopPropagation();
-          close(true);
-        }
-      };
-      document.addEventListener("keydown", onKey, true);
-      buttons.appendChild(cancelBtn);
-      buttons.appendChild(confirmBtn);
-      dialog.appendChild(title);
-      dialog.appendChild(body);
-      dialog.appendChild(rememberRow);
-      dialog.appendChild(buttons);
-      backdrop.appendChild(dialog);
-      document.documentElement.appendChild(backdrop);
-      requestAnimationFrame(() => {
-        backdrop.style.opacity = "1";
-        dialog.style.transform = "scale(1)";
-        confirmBtn.focus();
-      });
-    });
-    const uploadRect = async (sq) => {
-      const consent = await getUploadConsent();
-      if (!consent) {
-        const ok = await confirmUpload();
-        if (!ok) return;
-      }
-      let blob;
-      try {
-        blob = await captureRect(sq.getBoundingClientRect(), currentLayer?.getAnnotations());
-      } catch (err) {
-        console.error("Capture failed", err);
-        showToast("Nepoda\u0159ilo se po\u0159\xEDdit screenshot");
-        return;
-      }
-      const pending = showToast("Nahr\xE1v\xE1m na 0x0.st\u2026", { sticky: true });
-      try {
-        const dataUrl = await blobToDataUrl(blob);
-        const message = { type: "uploadImage", dataUrl };
-        const response = await chrome.runtime.sendMessage(message);
-        pending?.dismiss();
-        if (!response || response.error || !response.url) {
-          throw new Error(response?.error ?? "upload failed");
-        }
-        const url = response.url;
-        const note = response.provider === "fallback" ? " (catbox.moe)" : "";
-        try {
-          window.focus();
-          await navigator.clipboard.writeText(url);
-          showToast(`Odkaz zkop\xEDrov\xE1n${note}: ${url}`);
-        } catch {
-          showToastWithCopyAction(`Klikni pro zkop\xEDrov\xE1n\xED${note}: ${url}`, url);
-        }
-      } catch (err) {
-        pending?.dismiss();
-        console.error("Upload failed", err);
-        showToast("Nahr\xE1n\xED selhalo: " + (err instanceof Error ? err.message : String(err)));
-      }
     };
     const TRACKING_PARAMS = [
       "fbclid",
@@ -1044,9 +863,6 @@
         showToast("Kop\xEDrov\xE1n\xED barvy selhalo");
       }
     };
-    const translateRect = (_sq, _btn) => {
-      showToast("P\u0159eklad zat\xEDm nedostupn\xFD");
-    };
     const addControls = (sq, scale) => {
       const container = document.createElement("div");
       container.style.cssText = `
@@ -1099,12 +915,6 @@
         <line x1="12" y1="2" x2="12" y2="15"/>
       </svg>
     `;
-      const linkSvg = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-      </svg>
-    `;
       const qrSvg = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -1124,20 +934,16 @@
         <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/>
       </svg>
     `;
-      const translateSvg = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-        <path d="M5 8h6"/>
-        <path d="M8 5v3"/>
-        <path d="M5 14c0 0 2 4 6 4"/>
-        <path d="M11 14c0 0-2 4-6 4"/>
-        <path d="M14 21l4-9 4 9"/>
-        <path d="M15.5 17h5"/>
-      </svg>
-    `;
       const closeSvg = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <line x1="6" y1="6" x2="18" y2="18"/>
         <line x1="18" y1="6" x2="6" y2="18"/>
+      </svg>
+    `;
+      const plusSvg = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
     `;
       const sqRectInit = sq.getBoundingClientRect();
@@ -1146,11 +952,7 @@
       const pickerAvailable = origW >= 10 && origH >= 10;
       primaryRow.appendChild(makeIconButton(copySvg, "Kop\xEDrovat (\u2318C)", () => copyRect(sq)));
       primaryRow.appendChild(makeIconButton(shareSvg, "Sd\xEDlet / st\xE1hnout", () => shareRect(sq)));
-      primaryRow.appendChild(makeIconButton(linkSvg, "Nahr\xE1t a zkop\xEDrovat odkaz", () => uploadRect(sq)));
       primaryRow.appendChild(makeIconButton(qrSvg, "QR k\xF3d str\xE1nky (Q)", () => void openQrModal()));
-      let translateBtn;
-      translateBtn = makeIconButton(translateSvg, "P\u0159elo\u017Eit text v obr\xE1zku", () => translateRect(sq, translateBtn));
-      primaryRow.appendChild(translateBtn);
       let pickerBtn = null;
       if (pickerAvailable) {
         pickerBtn = makeIconButton(pickerSvg, "Color picker (I, Alt+klik)", () => {
@@ -1159,6 +961,120 @@
         primaryRow.appendChild(pickerBtn);
       }
       primaryRow.appendChild(sep());
+      let refreshActiveTool = null;
+      let deepActive = false;
+      let deepCloseBtn = null;
+      let savedBodyTransform = "";
+      let savedSqStyle = null;
+      const exitDeepZoom = () => {
+        if (!deepActive || !savedSqStyle) return;
+        deepActive = false;
+        deepZoomExit = null;
+        document.body.style.transition = "transform 0.4s ease";
+        document.body.style.transform = savedBodyTransform;
+        sq.style.transition = "left 0.4s ease, top 0.4s ease, width 0.4s ease, height 0.4s ease, border-color 0.2s ease, box-shadow 0.2s ease";
+        sq.style.left = savedSqStyle.left;
+        sq.style.top = savedSqStyle.top;
+        sq.style.width = savedSqStyle.width;
+        sq.style.height = savedSqStyle.height;
+        sq.style.border = savedSqStyle.border;
+        sq.style.boxShadow = savedSqStyle.boxShadow;
+        sq.style.pointerEvents = savedSqStyle.pointerEvents;
+        savedSqStyle = null;
+        container.style.opacity = "1";
+        container.style.pointerEvents = "auto";
+        if (deepCloseBtn) {
+          const btn = deepCloseBtn;
+          btn.style.opacity = "0";
+          setTimeout(() => btn.remove(), 200);
+          deepCloseBtn = null;
+        }
+      };
+      const enterDeepZoom = () => {
+        if (deepActive) return;
+        deepActive = true;
+        deepZoomExit = exitDeepZoom;
+        if (pickerEnabled) setPickerActive(false);
+        const factor = 1.25;
+        const newScale = scale * factor;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const newW = origW * newScale;
+        const newH = origH * newScale;
+        savedBodyTransform = document.body.style.transform;
+        savedSqStyle = {
+          border: sq.style.border,
+          boxShadow: sq.style.boxShadow,
+          left: sq.style.left,
+          top: sq.style.top,
+          width: sq.style.width,
+          height: sq.style.height,
+          pointerEvents: sq.style.pointerEvents
+        };
+        document.body.style.transition = "transform 0.4s ease";
+        document.body.style.transform = savedBodyTransform.replace(
+          /scale\([^)]+\)/,
+          `scale(${newScale})`
+        );
+        sq.style.transition = "left 0.4s ease, top 0.4s ease, width 0.4s ease, height 0.4s ease, border-color 0.2s ease, box-shadow 0.2s ease";
+        sq.style.left = `${vw / 2 - newW / 2}px`;
+        sq.style.top = `${vh / 2 - newH / 2}px`;
+        sq.style.width = `${newW}px`;
+        sq.style.height = `${newH}px`;
+        sq.style.border = "1.5px solid transparent";
+        sq.style.boxShadow = "none";
+        container.style.opacity = "0";
+        container.style.pointerEvents = "none";
+        const btn = document.createElement("button");
+        btn.innerHTML = closeSvg;
+        btn.setAttribute("aria-label", "Zp\u011Bt (Esc)");
+        btn.style.cssText = `
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        width: 36px;
+        height: 36px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        background: rgba(20, 20, 22, 0.75);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        color: rgba(255, 255, 255, 0.95);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        line-height: 0;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        z-index: 2147483647;
+        pointer-events: auto;
+        opacity: 0;
+        transition: opacity 0.2s ease, background 0.15s ease, transform 0.15s ease;
+      `;
+        btn.addEventListener("mouseenter", () => {
+          btn.style.background = "rgba(40, 40, 44, 0.9)";
+        });
+        btn.addEventListener("mouseleave", () => {
+          btn.style.background = "rgba(20, 20, 22, 0.75)";
+        });
+        btn.addEventListener("mousedown", () => {
+          btn.style.transform = "scale(0.92)";
+        });
+        btn.addEventListener("mouseup", () => {
+          btn.style.transform = "scale(1)";
+        });
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          exitDeepZoom();
+        });
+        overlay.appendChild(btn);
+        deepCloseBtn = btn;
+        requestAnimationFrame(() => {
+          btn.style.opacity = "1";
+        });
+      };
+      primaryRow.appendChild(makeIconButton(plusSvg, "P\u0159ibl\xED\u017Eit je\u0161t\u011B v\xEDc", enterDeepZoom));
       primaryRow.appendChild(makeIconButton(closeSvg, "Zav\u0159\xEDt (Esc)", closeZoom));
       const setPickerActive = (on) => {
         pickerEnabled = on;
@@ -1287,7 +1203,7 @@
         </svg>
       `;
         const toolButtons = [];
-        const refreshActiveTool = () => {
+        refreshActiveTool = () => {
           const cur = layer.getTool();
           for (const { tool, btn } of toolButtons) {
             const active = tool === cur;
@@ -1299,7 +1215,7 @@
           const btn = makeIconButton(svg, title, () => {
             const next = layer.getTool() === tool ? "none" : tool;
             layer.setTool(next);
-            refreshActiveTool();
+            refreshActiveTool?.();
           });
           btn.addEventListener("mouseenter", () => {
             if (layer.getTool() === tool) {
@@ -1317,56 +1233,6 @@
           return btn;
         };
         annotRow.appendChild(makeToolButton(penSvg, "Tu\u017Eka (P)", "pen"));
-        const colorBtn = document.createElement("button");
-        colorBtn.setAttribute("aria-label", "Barva (cykl\xED)");
-        colorBtn.dataset.tooltip = "Barva (cykl\xED)";
-        colorBtn.style.cssText = `
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border: none;
-        border-radius: 8px;
-        background: transparent;
-        cursor: pointer;
-        padding: 0;
-        line-height: 0;
-        transition: background 0.15s ease, transform 0.15s ease;
-      `;
-        const colorDot = document.createElement("span");
-        const refreshColorDot = () => {
-          colorDot.style.background = layer.getColor();
-        };
-        colorDot.style.cssText = `
-        display: inline-block;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        border: 1.5px solid rgba(255, 255, 255, 0.6);
-        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
-      `;
-        refreshColorDot();
-        colorBtn.appendChild(colorDot);
-        colorBtn.addEventListener("mouseenter", () => {
-          colorBtn.style.background = "rgba(255, 255, 255, 0.12)";
-        });
-        colorBtn.addEventListener("mouseleave", () => {
-          colorBtn.style.background = "transparent";
-        });
-        colorBtn.addEventListener("mousedown", () => {
-          colorBtn.style.transform = "scale(0.92)";
-        });
-        colorBtn.addEventListener("mouseup", () => {
-          colorBtn.style.transform = "scale(1)";
-        });
-        colorBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          layer.cycleColor();
-          refreshColorDot();
-        });
-        annotRow.appendChild(colorBtn);
         const clearBtn = makeIconButton(trashSvg, "Smazat v\u0161e", () => {
           layer.clear();
         });
@@ -1383,7 +1249,7 @@
           if (next !== null) {
             e.preventDefault();
             layer.setTool(next);
-            refreshActiveTool();
+            refreshActiveTool?.();
           }
         };
         document.addEventListener("keydown", onAnnotKey, true);
@@ -1408,6 +1274,7 @@
     };
     const zoomTo = (sq, left, top, width, height) => {
       if (width < 5 || height < 5) return;
+      zoomSessionSavedToHistory = false;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const br = document.body.getBoundingClientRect();
@@ -1490,7 +1357,10 @@
     const isZoomActive = () => document.body.style.transform !== "" && overlay.style.pointerEvents === "auto";
     document.addEventListener("keydown", (e) => {
       if (qrModalOpen) return;
-      if (e.key === "Escape") closeZoom();
+      if (e.key === "Escape") {
+        if (deepZoomExit) deepZoomExit();
+        else closeZoom();
+      }
       if (e.key === "Shift") document.documentElement.classList.add("dsd-aiming");
       if ((e.key === "q" || e.key === "Q") && !e.metaKey && !e.ctrlKey && !e.altKey && isZoomActive()) {
         const tag = e.target?.tagName;

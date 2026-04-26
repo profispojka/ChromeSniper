@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Drag Square Drawer",
-  "version": "1.0",
-  "description": "Při každém tažení myší nakreslí čtverec.",
+  "name": "Snipper",
+  "version": "1.0.0",
+  "description": "Snímky stránky, pipeta barev, anotace a historie. Vyber výřez tažením, upravuj a uloží se ti do schránky i historie.",
   "permissions": ["tabs", "storage", "clipboardWrite"],
-  "host_permissions": ["<all_urls>", "https://0x0.st/*", "https://catbox.moe/*"],
+  "host_permissions": ["<all_urls>"],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -35,7 +35,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["lib/qrcode.js", "dist/annotations.js", "dist/fullpage.js", "dist/content.js"],
+      "js": ["lib/qrcode.js", "dist/annotations.js", "dist/fullpage.js", "dist/historyModal.js", "dist/content.js"],
       "run_at": "document_idle"
     }
   ]

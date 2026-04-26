@@ -1,17 +1,61 @@
+import {
+  addItem as historyAdd,
+  listItems as historyList,
+  getItemDataUrl as historyGet,
+  deleteItem as historyDelete,
+  clearAll as historyClear,
+  type HistoryKind,
+  type HistoryListItem,
+} from './historyStore.js';
+
 (() => {
   type CaptureMessage = { type: 'captureVisibleTab' };
   type CaptureResponse =
     | { dataUrl: string; error?: undefined }
     | { dataUrl?: undefined; error: string };
 
-  type UploadMessage = { type: 'uploadImage'; dataUrl: string };
-  type UploadResponse =
-    | { url: string; provider: 'primary' | 'fallback'; error?: undefined }
-    | { url?: undefined; provider?: undefined; error: string };
+  type SaveScreenshotMessage = {
+    type: 'saveScreenshot';
+    dataUrl: string;
+    pageUrl: string;
+    pageTitle: string;
+    kind: HistoryKind;
+    width: number;
+    height: number;
+  };
+  type SaveScreenshotResponse =
+    | { ok: true; id: string; pruned: number }
+    | { ok: false; error: string };
 
-  type Message = CaptureMessage | UploadMessage;
+  type ListScreenshotsMessage = { type: 'listScreenshots' };
+  type ListScreenshotsResponse =
+    | { ok: true; items: HistoryListItem[] }
+    | { ok: false; error: string };
 
-  const UPLOAD_TIMEOUT_MS = 15000;
+  type GetScreenshotMessage = { type: 'getScreenshot'; id: string };
+  type GetScreenshotResponse =
+    | { ok: true; dataUrl: string }
+    | { ok: false; error: string };
+
+  type DeleteScreenshotMessage = { type: 'deleteScreenshot'; id: string };
+  type ClearScreenshotsMessage = { type: 'clearScreenshots' };
+  type SimpleAckResponse = { ok: true } | { ok: false; error: string };
+
+  type HistoryMessage =
+    | SaveScreenshotMessage
+    | ListScreenshotsMessage
+    | GetScreenshotMessage
+    | DeleteScreenshotMessage
+    | ClearScreenshotsMessage;
+
+  type AnyResponse =
+    | CaptureResponse
+    | SaveScreenshotResponse
+    | ListScreenshotsResponse
+    | GetScreenshotResponse
+    | SimpleAckResponse;
+
+  type Message = CaptureMessage | HistoryMessage;
 
   const handleCapture = (
     sender: chrome.runtime.MessageSender,
@@ -32,65 +76,51 @@
     return true;
   };
 
-  const fetchWithTimeout = async (url: string, init: RequestInit): Promise<Response> => {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), UPLOAD_TIMEOUT_MS);
-    try {
-      return await fetch(url, { ...init, signal: ctrl.signal });
-    } finally {
-      clearTimeout(timer);
-    }
-  };
+  const errMsg = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
-  const uploadTo0x0 = async (blob: Blob): Promise<string> => {
-    const fd = new FormData();
-    fd.append('file', blob, `screenshot-${Date.now()}.png`);
-    const res = await fetchWithTimeout('https://0x0.st', { method: 'POST', body: fd });
-    if (!res.ok) throw new Error(`0x0.st HTTP ${res.status}`);
-    const text = (await res.text()).trim();
-    if (!text.startsWith('https://')) throw new Error('0x0.st: unexpected response');
-    return text;
-  };
-
-  const uploadToCatbox = async (blob: Blob): Promise<string> => {
-    const fd = new FormData();
-    fd.append('reqtype', 'fileupload');
-    fd.append('fileToUpload', blob, `screenshot-${Date.now()}.png`);
-    const res = await fetchWithTimeout('https://catbox.moe/user/api.php', { method: 'POST', body: fd });
-    if (!res.ok) throw new Error(`catbox HTTP ${res.status}`);
-    const text = (await res.text()).trim();
-    if (!text.startsWith('https://')) throw new Error('catbox: unexpected response');
-    return text;
-  };
-
-  const handleUpload = async (
-    dataUrl: string,
-    sendResponse: (response: UploadResponse) => void,
+  const handleHistory = async (
+    msg: HistoryMessage,
+    sendResponse: (r: AnyResponse) => void,
   ): Promise<void> => {
-    let blob: Blob;
     try {
-      blob = await (await fetch(dataUrl)).blob();
-    } catch (err) {
-      sendResponse({ error: 'failed to decode image: ' + (err instanceof Error ? err.message : String(err)) });
-      return;
-    }
-
-    try {
-      const url = await uploadTo0x0(blob);
-      sendResponse({ url, provider: 'primary' });
-      return;
-    } catch (errPrimary) {
-      const primaryMsg = errPrimary instanceof Error ? errPrimary.message : String(errPrimary);
-      console.warn('0x0.st upload failed, trying catbox:', primaryMsg);
-      try {
-        const url = await uploadToCatbox(blob);
-        sendResponse({ url, provider: 'fallback' });
-        return;
-      } catch (errFallback) {
-        const fallbackMsg = errFallback instanceof Error ? errFallback.message : String(errFallback);
-        sendResponse({ error: `${primaryMsg}; fallback ${fallbackMsg}` });
+      if (msg.type === 'saveScreenshot') {
+        const out = await historyAdd({
+          dataUrl: msg.dataUrl,
+          pageUrl: msg.pageUrl,
+          pageTitle: msg.pageTitle,
+          kind: msg.kind,
+          width: msg.width,
+          height: msg.height,
+        });
+        sendResponse({ ok: true, id: out.id, pruned: out.pruned });
         return;
       }
+      if (msg.type === 'listScreenshots') {
+        const items = await historyList();
+        sendResponse({ ok: true, items });
+        return;
+      }
+      if (msg.type === 'getScreenshot') {
+        const dataUrl = await historyGet(msg.id);
+        if (dataUrl === null) {
+          sendResponse({ ok: false, error: 'not found' });
+          return;
+        }
+        sendResponse({ ok: true, dataUrl });
+        return;
+      }
+      if (msg.type === 'deleteScreenshot') {
+        await historyDelete(msg.id);
+        sendResponse({ ok: true });
+        return;
+      }
+      if (msg.type === 'clearScreenshots') {
+        await historyClear();
+        sendResponse({ ok: true });
+        return;
+      }
+    } catch (err) {
+      sendResponse({ ok: false, error: errMsg(err) });
     }
   };
 
@@ -98,13 +128,19 @@
     (
       msg: Message,
       sender,
-      sendResponse: (response: CaptureResponse | UploadResponse) => void,
+      sendResponse: (response: AnyResponse) => void,
     ) => {
       if (msg?.type === 'captureVisibleTab') {
         return handleCapture(sender, sendResponse as (r: CaptureResponse) => void);
       }
-      if (msg?.type === 'uploadImage') {
-        handleUpload(msg.dataUrl, sendResponse as (r: UploadResponse) => void);
+      if (
+        msg?.type === 'saveScreenshot' ||
+        msg?.type === 'listScreenshots' ||
+        msg?.type === 'getScreenshot' ||
+        msg?.type === 'deleteScreenshot' ||
+        msg?.type === 'clearScreenshots'
+      ) {
+        void handleHistory(msg, sendResponse);
         return true;
       }
       return undefined;
