@@ -1,135 +1,150 @@
 # Snipper
 
-Chrome rozšíření pro rychlé snímání webových stránek, výběr barev pipetou, anotace a lokální historii. Vše běží 100 % v prohlížeči — žádný cloud, žádná telemetrie.
+Chrome extension for fast website screenshots, color picker, annotations, and local history. Everything runs 100% in your browser — no cloud, no telemetry.
 
 ![Snipper screenshot](screenshots/screenshot_1.png)
 
-## Funkce
+## Features
 
-- **Snímek výřezu** — podržte <kbd>Shift</kbd> a tažením myší vyberte oblast. Snímek se zkopíruje do schránky a uloží do historie.
-- **Snímek celé stránky** — přes tlačítko v popupu. Funguje i u dlouhých scrollovacích stránek.
-- **Pipeta** — vyberte hex barvu z libovolného pixelu na stránce.
-- **Anotace** — kreslete a popisujte přímo nad snímkem.
-- **Historie** — všechny snímky se ukládají lokálně v IndexedDB, kdykoli se k nim vraťte.
-- **QR kód** — vygenerujte QR kód z URL aktuální stránky.
+- **Crop snapshot** — hold <kbd>Shift</kbd> and drag to select an area. The screenshot is copied to clipboard and saved to history.
+- **Full page snapshot** — via the popup button. Works with long scrolling pages.
+- **Color picker** — select hex color from any pixel on the page.
+- **Annotations** — draw and annotate directly on the screenshot.
+- **History** — all screenshots are stored locally in IndexedDB, access them anytime.
+- **QR code** — generate a QR code from the current page URL.
 
-## Instalace
+## Installation
 
-### Z Chrome Web Store
+### From Chrome Web Store
 
-_(odkaz bude doplněn po publikaci)_
+_(link will be added after publication)_
 
-### Vývojářská instalace
+### Developer Installation
 
 ```bash
 npm install
 npm run build:prod
 ```
 
-Pak v Chromu:
+Then in Chrome:
 
 1. `chrome://extensions/`
-2. Zapnout **Developer mode**
-3. **Load unpacked** → vybrat root tohoto repa
+2. Enable **Developer mode**
+3. **Load unpacked** → select the root of this repo
 
-### Build do release ZIPu
+### Build Release ZIP
 
 ```bash
 npm run package
 ```
 
-Vytvoří `release/snipper-{version}.zip` připravený k uploadu do Chrome Web Store. Obsahuje pouze produkční soubory (žádné `.map`, žádné docs).
+Creates `release/snipper-{version}.zip` ready for uploading to Chrome Web Store. Contains only production files (no `.map`, no docs).
 
-## Skripty
+## Scripts
 
-| Skript | Co dělá |
+| Script | What it does |
 |---|---|
-| `npm run build` | Vývojářský build se sourcemapami |
-| `npm run watch` | Auto-rebuild při změně |
-| `npm run build:prod` | Produkční build (minify, drop console, bez map) |
-| `npm run package` | Produkční build + zabalí do ZIPu |
+| `npm run build` | Development build with sourcemaps |
+| `npm run watch` | Auto-rebuild on changes |
+| `npm run build:prod` | Production build (minify, drop console, no maps) |
+| `npm run package` | Production build + compress to ZIP |
 | `npm run typecheck` | TypeScript typecheck |
 
-## Soukromí
+## Privacy
 
-Snipper **neukládá ani nepřenáší žádná data mimo váš prohlížeč**. Veškeré snímky a nastavení zůstávají lokálně. Žádné analytics, žádné servery, žádné sdílení s třetími stranami.
+Snipper **stores and transmits no data outside your browser**. All screenshots and settings remain local. No analytics, no servers, no third-party sharing.
 
-Plné znění: **[Privacy Policy](https://profispojka.github.io/ChromeSniper/PRIVACY)**
+Full terms: **[Privacy Policy](https://profispojka.github.io/ChromeSniper/PRIVACY)**
 
-## Oprávnění
+## Permissions
 
-Snipper si žádá pouze nezbytné minimum:
+Snipper requests only the bare minimum:
 
-| Oprávnění | Účel |
+| Permission | Purpose |
 |---|---|
-| `activeTab` | Spuštění snímání / pipety na aktuální záložce po kliknutí v popupu |
-| `<all_urls>` host | Content script musí běžet na libovolné stránce, kterou chcete snímat |
-| `storage` | Lokální uložení preferencí (např. zda strippovat tracking parametry z URL při generování QR) |
-| `clipboardWrite` | Kopírování PNG snímku nebo hex barvy do schránky |
+| `activeTab` | Enable screenshots / color picker on the current tab after clicking the popup |
+| `<all_urls>` host | Content script must run on any page you want to screenshot |
+| `storage` | Local storage of user preferences (e.g., whether to strip tracking parameters from URLs when generating QR codes) |
+| `clipboardWrite` | Copy PNG screenshot or hex color to clipboard |
 
-Snipper **nepoužívá** `tabs`, `cookies`, `history`, `webRequest` ani jiná citlivá oprávnění.
+Snipper **does not use** `tabs`, `cookies`, `history`, `webRequest`, or other sensitive permissions.
 
-## Licence
+## License
 
 [MIT](LICENSE)
 
-Snipper bundlue knihovnu [`qrcode-generator`](https://github.com/kazuhikoarase/qrcode-generator) (MIT, © 2009 Kazuhiko Arase).
+Snipper bundles the [`qrcode-generator`](https://github.com/kazuhikoarase/qrcode-generator) library (MIT, © 2009 Kazuhiko Arase).
 
-## Autor
+## Author
 
 [Jirka Enty](https://entyai.cz) · [jirka@entyai.cz](mailto:jirka@entyai.cz)
 
 ---
 
-## Chrome Web Store — listing draft
+## Chrome Web Store — Listing Draft
 
-> Tato sekce je pomůcka pro vyplnění [Web Store dashboardu](https://chrome.google.com/webstore/devconsole). Lze později smazat.
+> This section is a helper for filling the [Web Store dashboard](https://chrome.google.com/webstore/devconsole). Can be deleted later.
 
-### Krátký popis (do 132 znaků)
-
-```
-Snímky stránky, pipeta barev, anotace a historie. Vyber výřez tažením, upravuj a uloží se ti do schránky i historie.
-```
-
-### Detailní popis (~900 znaků)
+### Short Description (up to 132 characters)
 
 ```
-Snipper je rychlý nástroj pro pořizování screenshotů přímo v prohlížeči. Žádný cloud, žádný účet, žádná telemetrie — vše zůstává lokálně.
+Fast website screenshots, color picker, annotations & history. Drag to crop, edit & save to clipboard and history.
+```
 
-Co Snipper umí:
-• Výřez tažením myší — podržte Shift a tažením vyberte oblast. Snímek je rovnou ve schránce.
-• Snímek celé stránky — i u dlouhých scrollovacích stránek.
-• Pipeta — vyberte hex barvu libovolného pixelu na stránce.
-• Anotace — kreslete a popisujte přímo nad snímkem.
-• Lokální historie — IndexedDB ve vašem prohlížeči, žádné nahrávání nikam.
-• QR kód — vygenerujte QR kód z aktuální URL.
+### Detailed Description (~900 characters)
 
-Soukromí na prvním místě:
-Snipper nesbírá ani nepřenáší žádná data. Nepoužívá analytics ani sledování. Veškerá funkčnost běží 100 % offline ve vašem prohlížeči.
+```
+Snipper is a fast tool for taking screenshots directly in your browser. No cloud, no account, no telemetry — everything stays local.
 
-Open source pod MIT licencí.
+What Snipper does:
+• Drag to crop — hold Shift and drag to select an area. Screenshot is instantly in your clipboard.
+• Full page screenshot — even on long scrolling pages.
+• Color picker — select hex color from any pixel on the page.
+• Annotations — draw and annotate directly on the screenshot.
+• Local history — IndexedDB in your browser, nothing uploaded anywhere.
+• QR code — generate a QR code from the current URL.
+
+Privacy first:
+Snipper collects and transmits no data. No analytics, no tracking. All functionality runs 100% offline in your browser.
+
+Open source under MIT license.
 ```
 
 ### Single Purpose
 
 ```
-Snímání a anotace screenshotů z webových stránek s lokální historií.
+Capture and annotate website screenshots with local history.
 ```
 
-### Permission justifications (do dashboardu)
+### Permission Justifications (for dashboard)
 
-- **`activeTab`**: Snipper potřebuje přístup k aktuální záložce, aby mohl po kliknutí na popup nebo Shift+tažení injektovat content script a pořídit snímek. Aktivuje se výhradně po user gesture.
-- **`<all_urls>` host permission**: Content script se musí injektovat na libovolné stránce, kterou si uživatel chce snímat. Permission se nepoužívá ke čtení obsahu stránek pro jakýkoli jiný účel.
-- **`storage`**: Lokální ukládání drobných preferencí uživatele (např. zda strippovat tracking parametry z URL při generování QR kódu).
-- **`clipboardWrite`**: Kopírování pořízeného PNG snímku nebo hex hodnoty barvy do schránky operačního systému.
+- **`activeTab`**: Snipper needs access to the current tab to inject the content script and take a screenshot after clicking the popup or Shift+dragging. Only activates after user gesture.
+- **`<all_urls>` host permission**: Content script must inject on any page the user wants to screenshot. Permission is not used to read page content for any other purpose.
+- **`storage`**: Local storage of minor user preferences (e.g., whether to strip tracking parameters from URLs when generating QR codes).
+- **`clipboardWrite`**: Copy the captured PNG screenshot or hex color value to the system clipboard.
 
-### Data usage (Privacy practices form)
+### Data Usage (Privacy Practices Form)
 
 - ✅ **Does not collect or transmit user data**
 - ✅ **Does not sell user data to third parties**
 - ✅ **Does not use user data for purposes unrelated to the item's single purpose**
 
-### Kategorie
+### Remote Code Justification
+
+Snipper **does not use, execute, or load any remote code**. All code is bundled and minified at build time. No dynamic imports, no script tags, no external CDNs. The only external resource is the qrcode-generator library, which is bundled locally and included in the release ZIP.
+
+### Category
 
 - Primary: **Productivity**
-- Secondary: **Tools** (volitelné)
+- Secondary: **Tools** (optional)
+
+### Developer Program Policies Confirmation
+
+✅ Snipper complies with all Chrome Web Store Developer Program Policies:
+- Does not collect or transmit personal data
+- Does not use misleading or deceptive practices
+- Does not inject ads or modify page content
+- Has a clear single purpose (screenshot tool)
+- Respects user privacy and provides transparent permissions
+- Includes proper documentation and privacy policy
+- Does not distribute malware or harmful content

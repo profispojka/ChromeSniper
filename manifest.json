@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Snipper",
   "version": "1.0.0",
-  "description": "Page screenshots, color picker, annotations, and history. Drag to select a region, edit, and it's saved to your clipboard and history.",
+  "description": "Save and annotate screenshots of areas or full pages with shift + mouse.",
   "author": "Jirka Enty",
   "homepage_url": "https://entyai.cz",
   "permissions": ["activeTab", "storage", "clipboardWrite"],
