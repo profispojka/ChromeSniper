@@ -14,7 +14,7 @@
            L 22 118 Z"
         fill="none"
         stroke="url(#shadowGrad)"
-        stroke-width="18"
+        stroke-width="10"
         stroke-linejoin="round"
         stroke-linecap="round"/>
 
@@ -26,7 +26,7 @@
            L 10 106 Z"
         fill="none"
         stroke="#0a0b0e"
-        stroke-width="18"
+        stroke-width="10"
         stroke-linejoin="round"
         stroke-linecap="round"/>
 </svg>

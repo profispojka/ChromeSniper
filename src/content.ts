@@ -81,6 +81,12 @@
   };
   const historyApi = (window as unknown as { __dsdHistory?: HistoryAPI }).__dsdHistory;
 
+  type ElementPickerAPI = {
+    start: () => Promise<void>;
+    isActive: () => boolean;
+  };
+  const elementPickerApi = (window as unknown as { __dsdElementPicker?: ElementPickerAPI }).__dsdElementPicker;
+
   let zoomSessionSavedToHistory = false;
   let deepZoomExit: (() => void) | null = null;
 
@@ -1030,6 +1036,13 @@
         <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/>
       </svg>
     `;
+    const htmlSvg = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+        <polyline points="8 6 2 12 8 18"/>
+        <polyline points="16 6 22 12 16 18"/>
+        <line x1="14" y1="4" x2="10" y2="20"/>
+      </svg>
+    `;
     const closeSvg = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <line x1="6" y1="6" x2="18" y2="18"/>
@@ -1059,6 +1072,12 @@
       });
       primaryRow.appendChild(pickerBtn);
     }
+
+    primaryRow.appendChild(makeIconButton(htmlSvg, 'Copy HTML element', () => {
+      closeZoom();
+      if (elementPickerApi) void elementPickerApi.start();
+      else console.warn('Element picker API not loaded');
+    }));
 
     primaryRow.appendChild(sep());
     let refreshActiveTool: (() => void) | null = null;

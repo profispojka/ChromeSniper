@@ -5,10 +5,8 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const variants = [
-  'icon-1-selection',
-  'icon-2-scissors',
-  'icon-3-camera',
-  'icon-4-nested',
+  'icon-8-outline-snip',
+  'icon-9-outline-snip-shadow',
 ];
 
 for (const v of variants) {

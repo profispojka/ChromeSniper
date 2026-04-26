@@ -26,6 +26,7 @@ const entries = [
   { entryPoints: ['src/annotations.ts'], outfile: 'dist/annotations.js' },
   { entryPoints: ['src/fullpage.ts'], outfile: 'dist/fullpage.js' },
   { entryPoints: ['src/historyModal.ts'], outfile: 'dist/historyModal.js' },
+  { entryPoints: ['src/elementPicker.ts'], outfile: 'dist/elementPicker.js' },
   { entryPoints: ['src/popup.ts'], outfile: 'dist/popup.js' },
 ];
 
@@ -65,9 +66,9 @@ async function packageZip() {
   }
 
   execFileSync('zip', ['-r', '-q', zipName, 'snipper'], { cwd: resolve(outDir) });
-  await rm(stageDir, { recursive: true });
 
   console.log(`packaged → ${zipPath}`);
+  console.log(`unpacked → ${stageDir}`);
 }
 
 if (watch) {

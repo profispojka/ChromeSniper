@@ -28,7 +28,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["lib/qrcode.js", "dist/annotations.js", "dist/fullpage.js", "dist/historyModal.js", "dist/content.js"],
+      "js": ["lib/qrcode.js", "dist/annotations.js", "dist/fullpage.js", "dist/historyModal.js", "dist/elementPicker.js", "dist/content.js"],
       "run_at": "document_idle"
     }
   ]
