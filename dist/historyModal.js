@@ -1,4 +1,38 @@
-"use strict";(()=>{(()=>{let T=!1,B=t=>{let r=Date.now()-t,i=Math.floor(r/1e3);if(i<60)return"just now";let c=Math.floor(i/60);if(c<60)return`${c} min ago`;let g=Math.floor(c/60);if(g<24)return`${g} h ago`;let d=Math.floor(g/24);return d<7?`${d} d ago`:new Date(t).toLocaleDateString("en-US",{day:"numeric",month:"short",year:"numeric"})},M=t=>{if(t<1024)return`${t} B`;let r=t/1024;return r<1024?`${Math.round(r)} KB`:`${(r/1024).toFixed(1)} MB`},L=t=>{try{return new URL(t).hostname}catch{return t}},E=t=>{let r=document.createElement("div");r.dataset.dsdInternal="1",r.style.cssText=`
+"use strict";
+(() => {
+  // src/historyModal.ts
+  (() => {
+    let modalOpen = false;
+    const formatRelative = (ts) => {
+      const diff = Date.now() - ts;
+      const sec = Math.floor(diff / 1e3);
+      if (sec < 60) return "just now";
+      const min = Math.floor(sec / 60);
+      if (min < 60) return `${min} min ago`;
+      const hr = Math.floor(min / 60);
+      if (hr < 24) return `${hr} h ago`;
+      const day = Math.floor(hr / 24);
+      if (day < 7) return `${day} d ago`;
+      const d = new Date(ts);
+      return d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+    };
+    const formatSize = (bytes) => {
+      if (bytes < 1024) return `${bytes} B`;
+      const kb = bytes / 1024;
+      if (kb < 1024) return `${Math.round(kb)} KB`;
+      return `${(kb / 1024).toFixed(1)} MB`;
+    };
+    const hostOf = (url) => {
+      try {
+        return new URL(url).hostname;
+      } catch {
+        return url;
+      }
+    };
+    const showToast = (text) => {
+      const toast = document.createElement("div");
+      toast.dataset.dsdInternal = "1";
+      toast.style.cssText = `
       position: fixed;
       top: 32px;
       left: 50%;
@@ -17,7 +51,29 @@
       opacity: 0;
       transition: opacity 0.2s ease, transform 0.2s ease;
       max-width: min(80vw, 520px);
-    `,r.textContent=t,document.documentElement.appendChild(r),requestAnimationFrame(()=>{r.style.opacity="1",r.style.transform="translate(-50%, 0)"}),setTimeout(()=>{r.style.opacity="0",r.style.transform="translate(-50%, -12px)",setTimeout(()=>r.remove(),220)},2200)},U=async t=>await(await fetch(t)).blob(),$=async()=>{if(T)return;T=!0;let t=document.createElement("div");t.dataset.dsdInternal="1",t.style.cssText=`
+    `;
+      toast.textContent = text;
+      document.documentElement.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translate(-50%, 0)";
+      });
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translate(-50%, -12px)";
+        setTimeout(() => toast.remove(), 220);
+      }, 2200);
+    };
+    const dataUrlToBlob = async (dataUrl) => {
+      const res = await fetch(dataUrl);
+      return await res.blob();
+    };
+    const openHistoryModal = async () => {
+      if (modalOpen) return;
+      modalOpen = true;
+      const backdrop = document.createElement("div");
+      backdrop.dataset.dsdInternal = "1";
+      backdrop.style.cssText = `
       position: fixed;
       inset: 0;
       z-index: 2147483647;
@@ -30,7 +86,9 @@
       opacity: 0;
       transition: opacity 0.2s ease;
       pointer-events: auto;
-    `;let r=document.createElement("div");r.style.cssText=`
+    `;
+      const dialog = document.createElement("div");
+      dialog.style.cssText = `
       width: min(94vw, 880px);
       max-height: 90vh;
       margin: 16px;
@@ -49,7 +107,17 @@
       flex-direction: column;
       gap: 12px;
       overflow: hidden;
-    `;let i=document.createElement("div");i.style.cssText="display: flex; align-items: center; justify-content: space-between; gap: 12px;";let c=document.createElement("div");c.textContent="Screenshot history",c.style.cssText="font: 600 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;";let g=document.createElement("div");g.style.cssText="display: flex; align-items: center; gap: 8px;";let d=document.createElement("button");d.textContent="Clear all",d.style.cssText=`
+    `;
+      const header = document.createElement("div");
+      header.style.cssText = `display: flex; align-items: center; justify-content: space-between; gap: 12px;`;
+      const title = document.createElement("div");
+      title.textContent = "Screenshot history";
+      title.style.cssText = `font: 600 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;`;
+      const headerRight = document.createElement("div");
+      headerRight.style.cssText = `display: flex; align-items: center; gap: 8px;`;
+      const clearAllBtn = document.createElement("button");
+      clearAllBtn.textContent = "Clear all";
+      clearAllBtn.style.cssText = `
       padding: 6px 10px;
       border-radius: 6px;
       border: 1px solid rgba(255, 80, 80, 0.3);
@@ -58,17 +126,40 @@
       font: 500 12px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       cursor: pointer;
       transition: background 0.15s ease;
-    `,d.addEventListener("mouseenter",()=>{d.style.background="rgba(255, 80, 80, 0.18)"}),d.addEventListener("mouseleave",()=>{d.style.background="rgba(255, 80, 80, 0.08)"});let p=document.createElement("button");p.innerHTML=`
+    `;
+      clearAllBtn.addEventListener("mouseenter", () => {
+        clearAllBtn.style.background = "rgba(255, 80, 80, 0.18)";
+      });
+      clearAllBtn.addEventListener("mouseleave", () => {
+        clearAllBtn.style.background = "rgba(255, 80, 80, 0.08)";
+      });
+      const closeX = document.createElement("button");
+      closeX.innerHTML = `
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
-      </svg>`,p.style.cssText=`
+      </svg>`;
+      closeX.style.cssText = `
       width: 28px; height: 28px;
       display: inline-flex; align-items: center; justify-content: center;
       border: none; background: transparent;
       color: rgba(255, 255, 255, 0.7);
       border-radius: 6px; cursor: pointer; padding: 0;
       transition: background 0.15s ease, color 0.15s ease;
-    `,p.addEventListener("mouseenter",()=>{p.style.background="rgba(255, 255, 255, 0.1)",p.style.color="rgba(255, 255, 255, 1)"}),p.addEventListener("mouseleave",()=>{p.style.background="transparent",p.style.color="rgba(255, 255, 255, 0.7)"}),g.appendChild(d),g.appendChild(p),i.appendChild(c),i.appendChild(g);let s=document.createElement("div");s.style.cssText=`
+    `;
+      closeX.addEventListener("mouseenter", () => {
+        closeX.style.background = "rgba(255, 255, 255, 0.1)";
+        closeX.style.color = "rgba(255, 255, 255, 1)";
+      });
+      closeX.addEventListener("mouseleave", () => {
+        closeX.style.background = "transparent";
+        closeX.style.color = "rgba(255, 255, 255, 0.7)";
+      });
+      headerRight.appendChild(clearAllBtn);
+      headerRight.appendChild(closeX);
+      header.appendChild(title);
+      header.appendChild(headerRight);
+      const grid = document.createElement("div");
+      grid.style.cssText = `
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 10px;
@@ -77,7 +168,9 @@
       flex: 1 1 auto;
       min-height: 200px;
       max-height: 70vh;
-    `;let u=document.createElement("div");u.style.cssText=`
+    `;
+      const emptyState = document.createElement("div");
+      emptyState.style.cssText = `
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -85,7 +178,8 @@
       padding: 48px 16px;
       color: rgba(255, 255, 255, 0.55);
       text-align: center;
-    `,u.innerHTML=`
+    `;
+      emptyState.innerHTML = `
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.5; margin-bottom: 12px;">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
         <circle cx="9" cy="9" r="2"/>
@@ -93,7 +187,52 @@
       </svg>
       <div style="font-weight: 500;">No screenshots</div>
       <div style="font-size: 12px; margin-top: 4px;">Screenshots are automatically saved here after capture.</div>
-    `,r.appendChild(i),r.appendChild(s),t.appendChild(r),document.documentElement.appendChild(t);let m=!1,v=()=>{m||(m=!0,t.style.opacity="0",r.style.transform="scale(0.96)",setTimeout(()=>t.remove(),200),document.removeEventListener("keydown",x,!0),T=!1)},x=o=>{o.key==="Escape"&&(o.stopPropagation(),o.preventDefault(),v())};document.addEventListener("keydown",x,!0),p.addEventListener("click",v),t.addEventListener("click",o=>{o.target===t&&v()}),requestAnimationFrame(()=>{t.style.opacity="1",r.style.transform="scale(1)"});let C=o=>{if(s.replaceChildren(),o.length===0){s.style.display="flex",s.style.alignItems="center",s.style.justifyContent="center",s.appendChild(u);return}s.style.display="grid",s.style.alignItems="",s.style.justifyContent="";for(let n of o){let l=document.createElement("div");l.style.cssText=`
+    `;
+      dialog.appendChild(header);
+      dialog.appendChild(grid);
+      backdrop.appendChild(dialog);
+      document.documentElement.appendChild(backdrop);
+      let settled = false;
+      const close = () => {
+        if (settled) return;
+        settled = true;
+        backdrop.style.opacity = "0";
+        dialog.style.transform = "scale(0.96)";
+        setTimeout(() => backdrop.remove(), 200);
+        document.removeEventListener("keydown", onKey, true);
+        modalOpen = false;
+      };
+      const onKey = (e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          e.preventDefault();
+          close();
+        }
+      };
+      document.addEventListener("keydown", onKey, true);
+      closeX.addEventListener("click", close);
+      backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop) close();
+      });
+      requestAnimationFrame(() => {
+        backdrop.style.opacity = "1";
+        dialog.style.transform = "scale(1)";
+      });
+      const renderGrid = (items) => {
+        grid.replaceChildren();
+        if (items.length === 0) {
+          grid.style.display = "flex";
+          grid.style.alignItems = "center";
+          grid.style.justifyContent = "center";
+          grid.appendChild(emptyState);
+          return;
+        }
+        grid.style.display = "grid";
+        grid.style.alignItems = "";
+        grid.style.justifyContent = "";
+        for (const item of items) {
+          const card = document.createElement("div");
+          card.style.cssText = `
           display: flex;
           flex-direction: column;
           background: rgba(255, 255, 255, 0.04);
@@ -102,17 +241,35 @@
           overflow: hidden;
           cursor: pointer;
           transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-        `,l.addEventListener("mouseenter",()=>{l.style.background="rgba(255, 255, 255, 0.07)",l.style.borderColor="rgba(255, 255, 255, 0.14)"}),l.addEventListener("mouseleave",()=>{l.style.background="rgba(255, 255, 255, 0.04)",l.style.borderColor="rgba(255, 255, 255, 0.08)"});let h=document.createElement("div");h.style.cssText=`
+        `;
+          card.addEventListener("mouseenter", () => {
+            card.style.background = "rgba(255, 255, 255, 0.07)";
+            card.style.borderColor = "rgba(255, 255, 255, 0.14)";
+          });
+          card.addEventListener("mouseleave", () => {
+            card.style.background = "rgba(255, 255, 255, 0.04)";
+            card.style.borderColor = "rgba(255, 255, 255, 0.08)";
+          });
+          const thumbWrap = document.createElement("div");
+          thumbWrap.style.cssText = `
           position: relative;
           aspect-ratio: 4 / 3;
           background: rgba(0, 0, 0, 0.4);
           overflow: hidden;
-        `;let w=document.createElement("img");w.src=n.thumbDataUrl,w.alt=n.pageTitle||n.pageUrl,w.style.cssText=`
+        `;
+          const thumb = document.createElement("img");
+          thumb.src = item.thumbDataUrl;
+          thumb.alt = item.pageTitle || item.pageUrl;
+          thumb.style.cssText = `
           display: block;
           width: 100%;
           height: 100%;
-          object-fit: ${n.kind==="fullpage"?"contain":"cover"};
-        `,h.appendChild(w);let f=document.createElement("span");f.textContent=n.kind==="fullpage"?"full page":"region",f.style.cssText=`
+          object-fit: ${item.kind === "fullpage" ? "contain" : "cover"};
+        `;
+          thumbWrap.appendChild(thumb);
+          const kindBadge = document.createElement("span");
+          kindBadge.textContent = item.kind === "fullpage" ? "full page" : "region";
+          kindBadge.style.cssText = `
           position: absolute;
           top: 6px;
           left: 6px;
@@ -122,19 +279,76 @@
           font: 500 10px/1.2 -apple-system, BlinkMacSystemFont, sans-serif;
           border-radius: 4px;
           letter-spacing: 0.02em;
-        `,h.appendChild(f);let k=document.createElement("div");k.style.cssText="padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;";let e=document.createElement("div");e.textContent=n.pageTitle||L(n.pageUrl),e.title=n.pageTitle||n.pageUrl,e.style.cssText=`
+        `;
+          thumbWrap.appendChild(kindBadge);
+          const meta = document.createElement("div");
+          meta.style.cssText = `padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;`;
+          const titleLine = document.createElement("div");
+          titleLine.textContent = item.pageTitle || hostOf(item.pageUrl);
+          titleLine.title = item.pageTitle || item.pageUrl;
+          titleLine.style.cssText = `
           font: 500 12px/1.3 -apple-system, BlinkMacSystemFont, sans-serif;
           color: rgba(255, 255, 255, 0.95);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-        `;let a=document.createElement("div");a.textContent=`${B(n.createdAt)} \xB7 ${n.width}\xD7${n.height} \xB7 ${M(n.size)}`,a.style.cssText=`
+        `;
+          const subLine = document.createElement("div");
+          subLine.textContent = `${formatRelative(item.createdAt)} \xB7 ${item.width}\xD7${item.height} \xB7 ${formatSize(item.size)}`;
+          subLine.style.cssText = `
           font: 400 11px/1.3 -apple-system, BlinkMacSystemFont, sans-serif;
           color: rgba(255, 255, 255, 0.55);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-        `,k.appendChild(e),k.appendChild(a),l.appendChild(h),l.appendChild(k),l.addEventListener("click",()=>{I(n,y)}),s.appendChild(l)}},y=async()=>{s.replaceChildren();let o=document.createElement("div");o.style.cssText="padding: 24px; text-align: center; color: rgba(255,255,255,0.6); grid-column: 1 / -1;",o.textContent="Loading\u2026",s.appendChild(o);try{let n=await chrome.runtime.sendMessage({type:"listScreenshots"});if(!n||!n.ok)throw new Error(n&&!n.ok?n.error:"no response");C(n.items)}catch(n){s.replaceChildren();let l=document.createElement("div");l.style.cssText="padding: 24px; text-align: center; color: rgba(255,120,120,0.85); grid-column: 1 / -1;",l.textContent="Failed to load history: "+(n instanceof Error?n.message:String(n)),s.appendChild(l)}};d.addEventListener("click",async()=>{if(confirm("Really delete the entire screenshot history?"))try{let o=await chrome.runtime.sendMessage({type:"clearScreenshots"});if(!o||!o.ok)throw new Error(o&&!o.ok?o.error:"no response");E("History cleared"),await y()}catch(o){E("Delete failed: "+(o instanceof Error?o.message:String(o)))}}),y()},I=async(t,r)=>{let i=document.createElement("div");i.dataset.dsdInternal="1",i.style.cssText=`
+        `;
+          meta.appendChild(titleLine);
+          meta.appendChild(subLine);
+          card.appendChild(thumbWrap);
+          card.appendChild(meta);
+          card.addEventListener("click", () => {
+            void openPreview(item, refresh);
+          });
+          grid.appendChild(card);
+        }
+      };
+      const refresh = async () => {
+        grid.replaceChildren();
+        const loading = document.createElement("div");
+        loading.style.cssText = `padding: 24px; text-align: center; color: rgba(255,255,255,0.6); grid-column: 1 / -1;`;
+        loading.textContent = "Loading\u2026";
+        grid.appendChild(loading);
+        try {
+          const res = await chrome.runtime.sendMessage({ type: "listScreenshots" });
+          if (!res || !res.ok) {
+            throw new Error(res && !res.ok ? res.error : "no response");
+          }
+          renderGrid(res.items);
+        } catch (err) {
+          grid.replaceChildren();
+          const errEl = document.createElement("div");
+          errEl.style.cssText = `padding: 24px; text-align: center; color: rgba(255,120,120,0.85); grid-column: 1 / -1;`;
+          errEl.textContent = "Failed to load history: " + (err instanceof Error ? err.message : String(err));
+          grid.appendChild(errEl);
+        }
+      };
+      clearAllBtn.addEventListener("click", async () => {
+        if (!confirm("Really delete the entire screenshot history?")) return;
+        try {
+          const res = await chrome.runtime.sendMessage({ type: "clearScreenshots" });
+          if (!res || !res.ok) throw new Error(res && !res.ok ? res.error : "no response");
+          showToast("History cleared");
+          await refresh();
+        } catch (err) {
+          showToast("Delete failed: " + (err instanceof Error ? err.message : String(err)));
+        }
+      });
+      void refresh();
+    };
+    const openPreview = async (item, onChange) => {
+      const backdrop = document.createElement("div");
+      backdrop.dataset.dsdInternal = "1";
+      backdrop.style.cssText = `
       position: fixed;
       inset: 0;
       z-index: 2147483647;
@@ -147,7 +361,9 @@
       opacity: 0;
       transition: opacity 0.2s ease;
       pointer-events: auto;
-    `;let c=document.createElement("div");c.style.cssText=`
+    `;
+      const dialog = document.createElement("div");
+      dialog.style.cssText = `
       width: min(94vw, 980px);
       max-height: 92vh;
       margin: 16px;
@@ -164,16 +380,41 @@
       flex-direction: column;
       gap: 10px;
       overflow: hidden;
-    `;let g=document.createElement("div");g.style.cssText="display: flex; align-items: center; gap: 10px;";let d=document.createElement("div");d.style.cssText="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px;";let p=document.createElement("div");p.textContent=t.pageTitle||L(t.pageUrl),p.style.cssText="font: 600 14px/1.3 -apple-system, BlinkMacSystemFont, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";let s=document.createElement("div");s.textContent=`${t.width}\xD7${t.height} \xB7 ${M(t.size)} \xB7 ${B(t.createdAt)}`,s.style.cssText="font-size: 11px; color: rgba(255,255,255,0.6);",d.appendChild(p),d.appendChild(s);let u=document.createElement("button");u.innerHTML=`
+    `;
+      const head = document.createElement("div");
+      head.style.cssText = `display: flex; align-items: center; gap: 10px;`;
+      const titleEl = document.createElement("div");
+      titleEl.style.cssText = `flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px;`;
+      const titleText = document.createElement("div");
+      titleText.textContent = item.pageTitle || hostOf(item.pageUrl);
+      titleText.style.cssText = `font: 600 14px/1.3 -apple-system, BlinkMacSystemFont, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
+      const subText = document.createElement("div");
+      subText.textContent = `${item.width}\xD7${item.height} \xB7 ${formatSize(item.size)} \xB7 ${formatRelative(item.createdAt)}`;
+      subText.style.cssText = `font-size: 11px; color: rgba(255,255,255,0.6);`;
+      titleEl.appendChild(titleText);
+      titleEl.appendChild(subText);
+      const closeX = document.createElement("button");
+      closeX.innerHTML = `
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
-      </svg>`,u.style.cssText=`
+      </svg>`;
+      closeX.style.cssText = `
       width: 28px; height: 28px;
       display: inline-flex; align-items: center; justify-content: center;
       border: none; background: transparent;
       color: rgba(255, 255, 255, 0.7);
       border-radius: 6px; cursor: pointer; padding: 0;
-    `,u.addEventListener("mouseenter",()=>{u.style.background="rgba(255,255,255,0.1)"}),u.addEventListener("mouseleave",()=>{u.style.background="transparent"}),g.appendChild(d),g.appendChild(u);let m=document.createElement("div");m.style.cssText=`
+    `;
+      closeX.addEventListener("mouseenter", () => {
+        closeX.style.background = "rgba(255,255,255,0.1)";
+      });
+      closeX.addEventListener("mouseleave", () => {
+        closeX.style.background = "transparent";
+      });
+      head.appendChild(titleEl);
+      head.appendChild(closeX);
+      const previewWrap = document.createElement("div");
+      previewWrap.style.cssText = `
       flex: 1 1 auto;
       min-height: 0;
       max-height: 64vh;
@@ -184,15 +425,136 @@
       display: flex;
       align-items: center;
       justify-content: center;
-    `;let v=document.createElement("div");v.textContent="Loading\u2026",v.style.cssText="padding: 24px; color: rgba(255,255,255,0.6);",m.appendChild(v);let x=document.createElement("div");x.style.cssText="display: flex; gap: 8px; flex-wrap: wrap;";let C=(e,a,S)=>{let b=document.createElement("button");return b.textContent=e,b.style.cssText=`
+    `;
+      const loadingEl = document.createElement("div");
+      loadingEl.textContent = "Loading\u2026";
+      loadingEl.style.cssText = `padding: 24px; color: rgba(255,255,255,0.6);`;
+      previewWrap.appendChild(loadingEl);
+      const buttons = document.createElement("div");
+      buttons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
+      const mkButton = (label, primary, onClick) => {
+        const b = document.createElement("button");
+        b.textContent = label;
+        b.style.cssText = `
         flex: 1 1 auto;
         min-width: 0;
         padding: 9px 12px;
         border-radius: 8px;
-        border: 1px solid ${a?"transparent":"rgba(255, 255, 255, 0.12)"};
-        background: ${a?"rgba(10, 132, 255, 1)":"rgba(255, 255, 255, 0.06)"};
-        color: ${a?"white":"rgba(255, 255, 255, 0.95)"};
+        border: 1px solid ${primary ? "transparent" : "rgba(255, 255, 255, 0.12)"};
+        background: ${primary ? "rgba(10, 132, 255, 1)" : "rgba(255, 255, 255, 0.06)"};
+        color: ${primary ? "white" : "rgba(255, 255, 255, 0.95)"};
         font: 500 13px/1 -apple-system, BlinkMacSystemFont, sans-serif;
         cursor: pointer;
         transition: background 0.15s ease;
-      `,b.addEventListener("mouseenter",()=>{b.style.background=a?"rgba(10, 132, 255, 0.85)":"rgba(255, 255, 255, 0.12)"}),b.addEventListener("mouseleave",()=>{b.style.background=a?"rgba(10, 132, 255, 1)":"rgba(255, 255, 255, 0.06)"}),b.addEventListener("click",F=>{F.stopPropagation(),S()}),b},y=null,o=C("Copy",!0,async()=>{if(y)try{let e=await U(y);await navigator.clipboard.write([new ClipboardItem({"image/png":e})]),E("Copied")}catch{E("Copy failed")}}),n=C("Download",!1,()=>{if(!y)return;let e=document.createElement("a");e.href=y;let a=L(t.pageUrl)||"screenshot",S=new Date(t.createdAt).toISOString().replace(/[:.]/g,"-").slice(0,19);e.download=`${a}-${S}.png`,document.body.appendChild(e),e.click(),e.remove()}),l=C("Open page",!1,()=>{t.pageUrl&&window.open(t.pageUrl,"_blank","noopener")}),h=C("Delete",!1,async()=>{if(confirm("Delete this screenshot from history?"))try{let e=await chrome.runtime.sendMessage({type:"deleteScreenshot",id:t.id});if(!e||!e.ok)throw new Error(e&&!e.ok?e.error:"no response");E("Deleted"),f(),await r()}catch(e){E("Delete failed: "+(e instanceof Error?e.message:String(e)))}});h.style.color="rgba(255, 120, 120, 0.95)",h.style.borderColor="rgba(255, 80, 80, 0.3)",x.appendChild(o),x.appendChild(n),t.pageUrl&&x.appendChild(l),x.appendChild(h),c.appendChild(g),c.appendChild(m),c.appendChild(x),i.appendChild(c),document.documentElement.appendChild(i);let w=!1,f=()=>{w||(w=!0,i.style.opacity="0",c.style.transform="scale(0.96)",setTimeout(()=>i.remove(),200),document.removeEventListener("keydown",k,!0))},k=e=>{e.key==="Escape"&&(e.stopPropagation(),e.preventDefault(),f())};document.addEventListener("keydown",k,!0),u.addEventListener("click",f),i.addEventListener("click",e=>{e.target===i&&f()}),requestAnimationFrame(()=>{i.style.opacity="1",c.style.transform="scale(1)"});try{let e=await chrome.runtime.sendMessage({type:"getScreenshot",id:t.id});if(!e||!e.ok)throw new Error(e&&!e.ok?e.error:"no response");y=e.dataUrl,m.replaceChildren();let a=document.createElement("img");a.src=e.dataUrl,a.style.cssText=`display: block; max-width: 100%; height: auto; ${t.kind==="fullpage"?"":"max-height: 64vh; object-fit: contain;"}`,m.appendChild(a)}catch(e){m.replaceChildren();let a=document.createElement("div");a.style.cssText="padding: 24px; color: rgba(255,120,120,0.85);",a.textContent="Failed to load: "+(e instanceof Error?e.message:String(e)),m.appendChild(a)}};window.__dsdHistory={open:$,isOpen:()=>T}})();})();
+      `;
+        b.addEventListener("mouseenter", () => {
+          b.style.background = primary ? "rgba(10, 132, 255, 0.85)" : "rgba(255, 255, 255, 0.12)";
+        });
+        b.addEventListener("mouseleave", () => {
+          b.style.background = primary ? "rgba(10, 132, 255, 1)" : "rgba(255, 255, 255, 0.06)";
+        });
+        b.addEventListener("click", (e) => {
+          e.stopPropagation();
+          onClick();
+        });
+        return b;
+      };
+      let fullDataUrl = null;
+      const copyBtn = mkButton("Copy", true, async () => {
+        if (!fullDataUrl) return;
+        try {
+          const blob = await dataUrlToBlob(fullDataUrl);
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+          showToast("Copied");
+        } catch (err) {
+          showToast("Copy failed");
+          console.error(err);
+        }
+      });
+      const downloadBtn = mkButton("Download", false, () => {
+        if (!fullDataUrl) return;
+        const a = document.createElement("a");
+        a.href = fullDataUrl;
+        const host = hostOf(item.pageUrl) || "screenshot";
+        const stamp = new Date(item.createdAt).toISOString().replace(/[:.]/g, "-").slice(0, 19);
+        a.download = `${host}-${stamp}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      });
+      const openUrlBtn = mkButton("Open page", false, () => {
+        if (!item.pageUrl) return;
+        window.open(item.pageUrl, "_blank", "noopener");
+      });
+      const deleteBtn = mkButton("Delete", false, async () => {
+        if (!confirm("Delete this screenshot from history?")) return;
+        try {
+          const res = await chrome.runtime.sendMessage({ type: "deleteScreenshot", id: item.id });
+          if (!res || !res.ok) throw new Error(res && !res.ok ? res.error : "no response");
+          showToast("Deleted");
+          close();
+          await onChange();
+        } catch (err) {
+          showToast("Delete failed: " + (err instanceof Error ? err.message : String(err)));
+        }
+      });
+      deleteBtn.style.color = "rgba(255, 120, 120, 0.95)";
+      deleteBtn.style.borderColor = "rgba(255, 80, 80, 0.3)";
+      buttons.appendChild(copyBtn);
+      buttons.appendChild(downloadBtn);
+      if (item.pageUrl) buttons.appendChild(openUrlBtn);
+      buttons.appendChild(deleteBtn);
+      dialog.appendChild(head);
+      dialog.appendChild(previewWrap);
+      dialog.appendChild(buttons);
+      backdrop.appendChild(dialog);
+      document.documentElement.appendChild(backdrop);
+      let settled = false;
+      const close = () => {
+        if (settled) return;
+        settled = true;
+        backdrop.style.opacity = "0";
+        dialog.style.transform = "scale(0.96)";
+        setTimeout(() => backdrop.remove(), 200);
+        document.removeEventListener("keydown", onKey, true);
+      };
+      const onKey = (e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          e.preventDefault();
+          close();
+        }
+      };
+      document.addEventListener("keydown", onKey, true);
+      closeX.addEventListener("click", close);
+      backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop) close();
+      });
+      requestAnimationFrame(() => {
+        backdrop.style.opacity = "1";
+        dialog.style.transform = "scale(1)";
+      });
+      try {
+        const res = await chrome.runtime.sendMessage({ type: "getScreenshot", id: item.id });
+        if (!res || !res.ok) throw new Error(res && !res.ok ? res.error : "no response");
+        fullDataUrl = res.dataUrl;
+        previewWrap.replaceChildren();
+        const img = document.createElement("img");
+        img.src = res.dataUrl;
+        img.style.cssText = `display: block; max-width: 100%; height: auto; ${item.kind === "fullpage" ? "" : "max-height: 64vh; object-fit: contain;"}`;
+        previewWrap.appendChild(img);
+      } catch (err) {
+        previewWrap.replaceChildren();
+        const errEl = document.createElement("div");
+        errEl.style.cssText = `padding: 24px; color: rgba(255,120,120,0.85);`;
+        errEl.textContent = "Failed to load: " + (err instanceof Error ? err.message : String(err));
+        previewWrap.appendChild(errEl);
+      }
+    };
+    window.__dsdHistory = {
+      open: openHistoryModal,
+      isOpen: () => modalOpen
+    };
+  })();
+})();
+//# sourceMappingURL=historyModal.js.map
