@@ -999,8 +999,10 @@
         const newScale = scale * factor;
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        const newW = origW * newScale;
-        const newH = origH * newScale;
+        const sqStyleW = parseFloat(sq.style.width) || sqRectInit.width;
+        const sqStyleH = parseFloat(sq.style.height) || sqRectInit.height;
+        const newW = sqStyleW * factor;
+        const newH = sqStyleH * factor;
         savedBodyTransform = document.body.style.transform;
         savedSqStyle = {
           border: sq.style.border,

@@ -11,6 +11,7 @@ const proposals = [
   'proposal-C-snipframe',
   'proposal-D-lens',
   'proposal-E-dotsquare',
+  'proposal-F-scope',
 ];
 
 for (const name of proposals) {

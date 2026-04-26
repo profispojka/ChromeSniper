@@ -147,14 +147,4 @@ import {
     },
   );
 
-  chrome.commands?.onCommand?.addListener?.(async (command) => {
-    if (command !== 'capture-full-page') return;
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab?.id) return;
-      await chrome.tabs.sendMessage(tab.id, { type: 'startFullPageCapture' });
-    } catch (err) {
-      console.warn('capture-full-page command failed', err);
-    }
-  });
 })();
