@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="glass" cx="0.5" cy="0.45" r="0.55">
+      <stop offset="0"    stop-color="#2e3138"/>
+      <stop offset="0.7"  stop-color="#16181d"/>
+      <stop offset="1"    stop-color="#0a0b0e"/>
+    </radialGradient>
+    <radialGradient id="sheen" cx="0.36" cy="0.3" r="0.42">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="scopeClip">
+      <circle cx="64" cy="64" r="62"/>
+    </clipPath>
+  </defs>
+
+  <circle cx="64" cy="64" r="63" fill="url(#glass)"
+          stroke="#ffffff" stroke-opacity="0.55" stroke-width="2"/>
+  <circle cx="64" cy="64" r="63" fill="url(#sheen)"/>
+
+  <g clip-path="url(#scopeClip)" stroke="#e8e9ec" stroke-linecap="round">
+    <line x1="6"   y1="64" x2="38"  y2="64" stroke-width="4.2" stroke-opacity="0.92"/>
+    <line x1="90"  y1="64" x2="122" y2="64" stroke-width="4.2" stroke-opacity="0.92"/>
+    <line x1="64"  y1="6"  x2="64"  y2="38"  stroke-width="4.2" stroke-opacity="0.92"/>
+    <line x1="64"  y1="90" x2="64"  y2="122" stroke-width="4.2" stroke-opacity="0.92"/>
+
+    <line x1="38" y1="64" x2="90" y2="64" stroke-width="1.4" stroke-opacity="0.85"/>
+    <line x1="64" y1="38" x2="64" y2="90" stroke-width="1.4" stroke-opacity="0.85"/>
+  </g>
+
+  <g fill="#e8e9ec" fill-opacity="0.85">
+    <circle cx="48" cy="64" r="1.6"/>
+    <circle cx="80" cy="64" r="1.6"/>
+    <circle cx="64" cy="48" r="1.6"/>
+    <circle cx="64" cy="80" r="1.6"/>
+  </g>
+
+  <circle cx="64" cy="64" r="2.6" fill="#e8e9ec"/>
+</svg>

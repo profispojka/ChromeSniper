@@ -56,6 +56,6 @@ Případné změny budou publikovány v této sekci a v repozitáři rozšířen
 
 ## Kontakt
 
-Otázky týkající se ochrany osobních údajů: **jiric@protonmail.com**
+Otázky týkající se ochrany osobních údajů: **jirka@entyai.cz**
 
 Autor: Jirka Enty / [entyai.cz](https://entyai.cz)
