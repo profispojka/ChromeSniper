@@ -6,27 +6,15 @@
     </linearGradient>
   </defs>
 
-  <!-- back layer: blue-green "shadow", offset diagonally down-right -->
-  <path d="M 22 22
-           L 92 22
-           L 118 48
-           L 118 118
-           L 22 118 Z"
+  <!-- gradient outline with one snipped corner (top-right) -->
+  <path d="M 18 18
+           L 88 18
+           L 110 40
+           L 110 110
+           L 18 110 Z"
         fill="none"
         stroke="url(#shadowGrad)"
-        stroke-width="18"
-        stroke-linejoin="round"
-        stroke-linecap="round"/>
-
-  <!-- front layer: black outline with snipped corner -->
-  <path d="M 10 10
-           L 80 10
-           L 106 36
-           L 106 106
-           L 10 106 Z"
-        fill="none"
-        stroke="#0a0b0e"
-        stroke-width="18"
+        stroke-width="28"
         stroke-linejoin="round"
         stroke-linecap="round"/>
 </svg>

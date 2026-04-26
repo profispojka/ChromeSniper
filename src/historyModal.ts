@@ -257,10 +257,14 @@
       grid.replaceChildren();
       if (items.length === 0) {
         grid.style.display = 'flex';
+        grid.style.alignItems = 'center';
+        grid.style.justifyContent = 'center';
         grid.appendChild(emptyState);
         return;
       }
       grid.style.display = 'grid';
+      grid.style.alignItems = '';
+      grid.style.justifyContent = '';
 
       for (const item of items) {
         const card = document.createElement('div');

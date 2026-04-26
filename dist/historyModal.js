@@ -1,4 +1,4 @@
-"use strict";(()=>{(()=>{let T=!1,B=t=>{let r=Date.now()-t,a=Math.floor(r/1e3);if(a<60)return"just now";let d=Math.floor(a/60);if(d<60)return`${d} min ago`;let g=Math.floor(d/60);if(g<24)return`${g} h ago`;let l=Math.floor(g/24);return l<7?`${l} d ago`:new Date(t).toLocaleDateString("en-US",{day:"numeric",month:"short",year:"numeric"})},M=t=>{if(t<1024)return`${t} B`;let r=t/1024;return r<1024?`${Math.round(r)} KB`:`${(r/1024).toFixed(1)} MB`},L=t=>{try{return new URL(t).hostname}catch{return t}},E=t=>{let r=document.createElement("div");r.dataset.dsdInternal="1",r.style.cssText=`
+"use strict";(()=>{(()=>{let T=!1,B=t=>{let r=Date.now()-t,i=Math.floor(r/1e3);if(i<60)return"just now";let c=Math.floor(i/60);if(c<60)return`${c} min ago`;let g=Math.floor(c/60);if(g<24)return`${g} h ago`;let d=Math.floor(g/24);return d<7?`${d} d ago`:new Date(t).toLocaleDateString("en-US",{day:"numeric",month:"short",year:"numeric"})},M=t=>{if(t<1024)return`${t} B`;let r=t/1024;return r<1024?`${Math.round(r)} KB`:`${(r/1024).toFixed(1)} MB`},L=t=>{try{return new URL(t).hostname}catch{return t}},E=t=>{let r=document.createElement("div");r.dataset.dsdInternal="1",r.style.cssText=`
       position: fixed;
       top: 32px;
       left: 50%;
@@ -49,7 +49,7 @@
       flex-direction: column;
       gap: 12px;
       overflow: hidden;
-    `;let a=document.createElement("div");a.style.cssText="display: flex; align-items: center; justify-content: space-between; gap: 12px;";let d=document.createElement("div");d.textContent="Screenshot history",d.style.cssText="font: 600 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;";let g=document.createElement("div");g.style.cssText="display: flex; align-items: center; gap: 8px;";let l=document.createElement("button");l.textContent="Clear all",l.style.cssText=`
+    `;let i=document.createElement("div");i.style.cssText="display: flex; align-items: center; justify-content: space-between; gap: 12px;";let c=document.createElement("div");c.textContent="Screenshot history",c.style.cssText="font: 600 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;";let g=document.createElement("div");g.style.cssText="display: flex; align-items: center; gap: 8px;";let d=document.createElement("button");d.textContent="Clear all",d.style.cssText=`
       padding: 6px 10px;
       border-radius: 6px;
       border: 1px solid rgba(255, 80, 80, 0.3);
@@ -58,17 +58,17 @@
       font: 500 12px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       cursor: pointer;
       transition: background 0.15s ease;
-    `,l.addEventListener("mouseenter",()=>{l.style.background="rgba(255, 80, 80, 0.18)"}),l.addEventListener("mouseleave",()=>{l.style.background="rgba(255, 80, 80, 0.08)"});let c=document.createElement("button");c.innerHTML=`
+    `,d.addEventListener("mouseenter",()=>{d.style.background="rgba(255, 80, 80, 0.18)"}),d.addEventListener("mouseleave",()=>{d.style.background="rgba(255, 80, 80, 0.08)"});let p=document.createElement("button");p.innerHTML=`
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
-      </svg>`,c.style.cssText=`
+      </svg>`,p.style.cssText=`
       width: 28px; height: 28px;
       display: inline-flex; align-items: center; justify-content: center;
       border: none; background: transparent;
       color: rgba(255, 255, 255, 0.7);
       border-radius: 6px; cursor: pointer; padding: 0;
       transition: background 0.15s ease, color 0.15s ease;
-    `,c.addEventListener("mouseenter",()=>{c.style.background="rgba(255, 255, 255, 0.1)",c.style.color="rgba(255, 255, 255, 1)"}),c.addEventListener("mouseleave",()=>{c.style.background="transparent",c.style.color="rgba(255, 255, 255, 0.7)"}),g.appendChild(l),g.appendChild(c),a.appendChild(d),a.appendChild(g);let p=document.createElement("div");p.style.cssText=`
+    `,p.addEventListener("mouseenter",()=>{p.style.background="rgba(255, 255, 255, 0.1)",p.style.color="rgba(255, 255, 255, 1)"}),p.addEventListener("mouseleave",()=>{p.style.background="transparent",p.style.color="rgba(255, 255, 255, 0.7)"}),g.appendChild(d),g.appendChild(p),i.appendChild(c),i.appendChild(g);let s=document.createElement("div");s.style.cssText=`
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 10px;
@@ -93,7 +93,7 @@
       </svg>
       <div style="font-weight: 500;">No screenshots</div>
       <div style="font-size: 12px; margin-top: 4px;">Screenshots are automatically saved here after capture.</div>
-    `,r.appendChild(a),r.appendChild(p),t.appendChild(r),document.documentElement.appendChild(t);let m=!1,v=()=>{m||(m=!0,t.style.opacity="0",r.style.transform="scale(0.96)",setTimeout(()=>t.remove(),200),document.removeEventListener("keydown",x,!0),T=!1)},x=o=>{o.key==="Escape"&&(o.stopPropagation(),o.preventDefault(),v())};document.addEventListener("keydown",x,!0),c.addEventListener("click",v),t.addEventListener("click",o=>{o.target===t&&v()}),requestAnimationFrame(()=>{t.style.opacity="1",r.style.transform="scale(1)"});let C=o=>{if(p.replaceChildren(),o.length===0){p.style.display="flex",p.appendChild(u);return}p.style.display="grid";for(let n of o){let i=document.createElement("div");i.style.cssText=`
+    `,r.appendChild(i),r.appendChild(s),t.appendChild(r),document.documentElement.appendChild(t);let m=!1,v=()=>{m||(m=!0,t.style.opacity="0",r.style.transform="scale(0.96)",setTimeout(()=>t.remove(),200),document.removeEventListener("keydown",x,!0),T=!1)},x=o=>{o.key==="Escape"&&(o.stopPropagation(),o.preventDefault(),v())};document.addEventListener("keydown",x,!0),p.addEventListener("click",v),t.addEventListener("click",o=>{o.target===t&&v()}),requestAnimationFrame(()=>{t.style.opacity="1",r.style.transform="scale(1)"});let C=o=>{if(s.replaceChildren(),o.length===0){s.style.display="flex",s.style.alignItems="center",s.style.justifyContent="center",s.appendChild(u);return}s.style.display="grid",s.style.alignItems="",s.style.justifyContent="";for(let n of o){let l=document.createElement("div");l.style.cssText=`
           display: flex;
           flex-direction: column;
           background: rgba(255, 255, 255, 0.04);
@@ -102,7 +102,7 @@
           overflow: hidden;
           cursor: pointer;
           transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-        `,i.addEventListener("mouseenter",()=>{i.style.background="rgba(255, 255, 255, 0.07)",i.style.borderColor="rgba(255, 255, 255, 0.14)"}),i.addEventListener("mouseleave",()=>{i.style.background="rgba(255, 255, 255, 0.04)",i.style.borderColor="rgba(255, 255, 255, 0.08)"});let h=document.createElement("div");h.style.cssText=`
+        `,l.addEventListener("mouseenter",()=>{l.style.background="rgba(255, 255, 255, 0.07)",l.style.borderColor="rgba(255, 255, 255, 0.14)"}),l.addEventListener("mouseleave",()=>{l.style.background="rgba(255, 255, 255, 0.04)",l.style.borderColor="rgba(255, 255, 255, 0.08)"});let h=document.createElement("div");h.style.cssText=`
           position: relative;
           aspect-ratio: 4 / 3;
           background: rgba(0, 0, 0, 0.4);
@@ -128,13 +128,13 @@
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-        `;let s=document.createElement("div");s.textContent=`${B(n.createdAt)} \xB7 ${n.width}\xD7${n.height} \xB7 ${M(n.size)}`,s.style.cssText=`
+        `;let a=document.createElement("div");a.textContent=`${B(n.createdAt)} \xB7 ${n.width}\xD7${n.height} \xB7 ${M(n.size)}`,a.style.cssText=`
           font: 400 11px/1.3 -apple-system, BlinkMacSystemFont, sans-serif;
           color: rgba(255, 255, 255, 0.55);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-        `,k.appendChild(e),k.appendChild(s),i.appendChild(h),i.appendChild(k),i.addEventListener("click",()=>{F(n,y)}),p.appendChild(i)}},y=async()=>{p.replaceChildren();let o=document.createElement("div");o.style.cssText="padding: 24px; text-align: center; color: rgba(255,255,255,0.6); grid-column: 1 / -1;",o.textContent="Loading\u2026",p.appendChild(o);try{let n=await chrome.runtime.sendMessage({type:"listScreenshots"});if(!n||!n.ok)throw new Error(n&&!n.ok?n.error:"no response");C(n.items)}catch(n){p.replaceChildren();let i=document.createElement("div");i.style.cssText="padding: 24px; text-align: center; color: rgba(255,120,120,0.85); grid-column: 1 / -1;",i.textContent="Failed to load history: "+(n instanceof Error?n.message:String(n)),p.appendChild(i)}};l.addEventListener("click",async()=>{if(confirm("Really delete the entire screenshot history?"))try{let o=await chrome.runtime.sendMessage({type:"clearScreenshots"});if(!o||!o.ok)throw new Error(o&&!o.ok?o.error:"no response");E("History cleared"),await y()}catch(o){E("Delete failed: "+(o instanceof Error?o.message:String(o)))}}),y()},F=async(t,r)=>{let a=document.createElement("div");a.dataset.dsdInternal="1",a.style.cssText=`
+        `,k.appendChild(e),k.appendChild(a),l.appendChild(h),l.appendChild(k),l.addEventListener("click",()=>{I(n,y)}),s.appendChild(l)}},y=async()=>{s.replaceChildren();let o=document.createElement("div");o.style.cssText="padding: 24px; text-align: center; color: rgba(255,255,255,0.6); grid-column: 1 / -1;",o.textContent="Loading\u2026",s.appendChild(o);try{let n=await chrome.runtime.sendMessage({type:"listScreenshots"});if(!n||!n.ok)throw new Error(n&&!n.ok?n.error:"no response");C(n.items)}catch(n){s.replaceChildren();let l=document.createElement("div");l.style.cssText="padding: 24px; text-align: center; color: rgba(255,120,120,0.85); grid-column: 1 / -1;",l.textContent="Failed to load history: "+(n instanceof Error?n.message:String(n)),s.appendChild(l)}};d.addEventListener("click",async()=>{if(confirm("Really delete the entire screenshot history?"))try{let o=await chrome.runtime.sendMessage({type:"clearScreenshots"});if(!o||!o.ok)throw new Error(o&&!o.ok?o.error:"no response");E("History cleared"),await y()}catch(o){E("Delete failed: "+(o instanceof Error?o.message:String(o)))}}),y()},I=async(t,r)=>{let i=document.createElement("div");i.dataset.dsdInternal="1",i.style.cssText=`
       position: fixed;
       inset: 0;
       z-index: 2147483647;
@@ -147,7 +147,7 @@
       opacity: 0;
       transition: opacity 0.2s ease;
       pointer-events: auto;
-    `;let d=document.createElement("div");d.style.cssText=`
+    `;let c=document.createElement("div");c.style.cssText=`
       width: min(94vw, 980px);
       max-height: 92vh;
       margin: 16px;
@@ -164,7 +164,7 @@
       flex-direction: column;
       gap: 10px;
       overflow: hidden;
-    `;let g=document.createElement("div");g.style.cssText="display: flex; align-items: center; gap: 10px;";let l=document.createElement("div");l.style.cssText="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px;";let c=document.createElement("div");c.textContent=t.pageTitle||L(t.pageUrl),c.style.cssText="font: 600 14px/1.3 -apple-system, BlinkMacSystemFont, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";let p=document.createElement("div");p.textContent=`${t.width}\xD7${t.height} \xB7 ${M(t.size)} \xB7 ${B(t.createdAt)}`,p.style.cssText="font-size: 11px; color: rgba(255,255,255,0.6);",l.appendChild(c),l.appendChild(p);let u=document.createElement("button");u.innerHTML=`
+    `;let g=document.createElement("div");g.style.cssText="display: flex; align-items: center; gap: 10px;";let d=document.createElement("div");d.style.cssText="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px;";let p=document.createElement("div");p.textContent=t.pageTitle||L(t.pageUrl),p.style.cssText="font: 600 14px/1.3 -apple-system, BlinkMacSystemFont, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";let s=document.createElement("div");s.textContent=`${t.width}\xD7${t.height} \xB7 ${M(t.size)} \xB7 ${B(t.createdAt)}`,s.style.cssText="font-size: 11px; color: rgba(255,255,255,0.6);",d.appendChild(p),d.appendChild(s);let u=document.createElement("button");u.innerHTML=`
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
       </svg>`,u.style.cssText=`
@@ -173,7 +173,7 @@
       border: none; background: transparent;
       color: rgba(255, 255, 255, 0.7);
       border-radius: 6px; cursor: pointer; padding: 0;
-    `,u.addEventListener("mouseenter",()=>{u.style.background="rgba(255,255,255,0.1)"}),u.addEventListener("mouseleave",()=>{u.style.background="transparent"}),g.appendChild(l),g.appendChild(u);let m=document.createElement("div");m.style.cssText=`
+    `,u.addEventListener("mouseenter",()=>{u.style.background="rgba(255,255,255,0.1)"}),u.addEventListener("mouseleave",()=>{u.style.background="transparent"}),g.appendChild(d),g.appendChild(u);let m=document.createElement("div");m.style.cssText=`
       flex: 1 1 auto;
       min-height: 0;
       max-height: 64vh;
@@ -184,15 +184,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
-    `;let v=document.createElement("div");v.textContent="Loading\u2026",v.style.cssText="padding: 24px; color: rgba(255,255,255,0.6);",m.appendChild(v);let x=document.createElement("div");x.style.cssText="display: flex; gap: 8px; flex-wrap: wrap;";let C=(e,s,S)=>{let b=document.createElement("button");return b.textContent=e,b.style.cssText=`
+    `;let v=document.createElement("div");v.textContent="Loading\u2026",v.style.cssText="padding: 24px; color: rgba(255,255,255,0.6);",m.appendChild(v);let x=document.createElement("div");x.style.cssText="display: flex; gap: 8px; flex-wrap: wrap;";let C=(e,a,S)=>{let b=document.createElement("button");return b.textContent=e,b.style.cssText=`
         flex: 1 1 auto;
         min-width: 0;
         padding: 9px 12px;
         border-radius: 8px;
-        border: 1px solid ${s?"transparent":"rgba(255, 255, 255, 0.12)"};
-        background: ${s?"rgba(10, 132, 255, 1)":"rgba(255, 255, 255, 0.06)"};
-        color: ${s?"white":"rgba(255, 255, 255, 0.95)"};
+        border: 1px solid ${a?"transparent":"rgba(255, 255, 255, 0.12)"};
+        background: ${a?"rgba(10, 132, 255, 1)":"rgba(255, 255, 255, 0.06)"};
+        color: ${a?"white":"rgba(255, 255, 255, 0.95)"};
         font: 500 13px/1 -apple-system, BlinkMacSystemFont, sans-serif;
         cursor: pointer;
         transition: background 0.15s ease;
-      `,b.addEventListener("mouseenter",()=>{b.style.background=s?"rgba(10, 132, 255, 0.85)":"rgba(255, 255, 255, 0.12)"}),b.addEventListener("mouseleave",()=>{b.style.background=s?"rgba(10, 132, 255, 1)":"rgba(255, 255, 255, 0.06)"}),b.addEventListener("click",H=>{H.stopPropagation(),S()}),b},y=null,o=C("Copy",!0,async()=>{if(y)try{let e=await U(y);await navigator.clipboard.write([new ClipboardItem({"image/png":e})]),E("Copied")}catch{E("Copy failed")}}),n=C("Download",!1,()=>{if(!y)return;let e=document.createElement("a");e.href=y;let s=L(t.pageUrl)||"screenshot",S=new Date(t.createdAt).toISOString().replace(/[:.]/g,"-").slice(0,19);e.download=`${s}-${S}.png`,document.body.appendChild(e),e.click(),e.remove()}),i=C("Open page",!1,()=>{t.pageUrl&&window.open(t.pageUrl,"_blank","noopener")}),h=C("Delete",!1,async()=>{if(confirm("Delete this screenshot from history?"))try{let e=await chrome.runtime.sendMessage({type:"deleteScreenshot",id:t.id});if(!e||!e.ok)throw new Error(e&&!e.ok?e.error:"no response");E("Deleted"),f(),await r()}catch(e){E("Delete failed: "+(e instanceof Error?e.message:String(e)))}});h.style.color="rgba(255, 120, 120, 0.95)",h.style.borderColor="rgba(255, 80, 80, 0.3)",x.appendChild(o),x.appendChild(n),t.pageUrl&&x.appendChild(i),x.appendChild(h),d.appendChild(g),d.appendChild(m),d.appendChild(x),a.appendChild(d),document.documentElement.appendChild(a);let w=!1,f=()=>{w||(w=!0,a.style.opacity="0",d.style.transform="scale(0.96)",setTimeout(()=>a.remove(),200),document.removeEventListener("keydown",k,!0))},k=e=>{e.key==="Escape"&&(e.stopPropagation(),e.preventDefault(),f())};document.addEventListener("keydown",k,!0),u.addEventListener("click",f),a.addEventListener("click",e=>{e.target===a&&f()}),requestAnimationFrame(()=>{a.style.opacity="1",d.style.transform="scale(1)"});try{let e=await chrome.runtime.sendMessage({type:"getScreenshot",id:t.id});if(!e||!e.ok)throw new Error(e&&!e.ok?e.error:"no response");y=e.dataUrl,m.replaceChildren();let s=document.createElement("img");s.src=e.dataUrl,s.style.cssText=`display: block; max-width: 100%; height: auto; ${t.kind==="fullpage"?"":"max-height: 64vh; object-fit: contain;"}`,m.appendChild(s)}catch(e){m.replaceChildren();let s=document.createElement("div");s.style.cssText="padding: 24px; color: rgba(255,120,120,0.85);",s.textContent="Failed to load: "+(e instanceof Error?e.message:String(e)),m.appendChild(s)}};window.__dsdHistory={open:$,isOpen:()=>T}})();})();
+      `,b.addEventListener("mouseenter",()=>{b.style.background=a?"rgba(10, 132, 255, 0.85)":"rgba(255, 255, 255, 0.12)"}),b.addEventListener("mouseleave",()=>{b.style.background=a?"rgba(10, 132, 255, 1)":"rgba(255, 255, 255, 0.06)"}),b.addEventListener("click",F=>{F.stopPropagation(),S()}),b},y=null,o=C("Copy",!0,async()=>{if(y)try{let e=await U(y);await navigator.clipboard.write([new ClipboardItem({"image/png":e})]),E("Copied")}catch{E("Copy failed")}}),n=C("Download",!1,()=>{if(!y)return;let e=document.createElement("a");e.href=y;let a=L(t.pageUrl)||"screenshot",S=new Date(t.createdAt).toISOString().replace(/[:.]/g,"-").slice(0,19);e.download=`${a}-${S}.png`,document.body.appendChild(e),e.click(),e.remove()}),l=C("Open page",!1,()=>{t.pageUrl&&window.open(t.pageUrl,"_blank","noopener")}),h=C("Delete",!1,async()=>{if(confirm("Delete this screenshot from history?"))try{let e=await chrome.runtime.sendMessage({type:"deleteScreenshot",id:t.id});if(!e||!e.ok)throw new Error(e&&!e.ok?e.error:"no response");E("Deleted"),f(),await r()}catch(e){E("Delete failed: "+(e instanceof Error?e.message:String(e)))}});h.style.color="rgba(255, 120, 120, 0.95)",h.style.borderColor="rgba(255, 80, 80, 0.3)",x.appendChild(o),x.appendChild(n),t.pageUrl&&x.appendChild(l),x.appendChild(h),c.appendChild(g),c.appendChild(m),c.appendChild(x),i.appendChild(c),document.documentElement.appendChild(i);let w=!1,f=()=>{w||(w=!0,i.style.opacity="0",c.style.transform="scale(0.96)",setTimeout(()=>i.remove(),200),document.removeEventListener("keydown",k,!0))},k=e=>{e.key==="Escape"&&(e.stopPropagation(),e.preventDefault(),f())};document.addEventListener("keydown",k,!0),u.addEventListener("click",f),i.addEventListener("click",e=>{e.target===i&&f()}),requestAnimationFrame(()=>{i.style.opacity="1",c.style.transform="scale(1)"});try{let e=await chrome.runtime.sendMessage({type:"getScreenshot",id:t.id});if(!e||!e.ok)throw new Error(e&&!e.ok?e.error:"no response");y=e.dataUrl,m.replaceChildren();let a=document.createElement("img");a.src=e.dataUrl,a.style.cssText=`display: block; max-width: 100%; height: auto; ${t.kind==="fullpage"?"":"max-height: 64vh; object-fit: contain;"}`,m.appendChild(a)}catch(e){m.replaceChildren();let a=document.createElement("div");a.style.cssText="padding: 24px; color: rgba(255,120,120,0.85);",a.textContent="Failed to load: "+(e instanceof Error?e.message:String(e)),m.appendChild(a)}};window.__dsdHistory={open:$,isOpen:()=>T}})();})();

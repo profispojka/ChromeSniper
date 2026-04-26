@@ -5,7 +5,6 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const variants = [
-  'icon-8-outline-snip',
   'icon-9-outline-snip-shadow',
 ];
 
