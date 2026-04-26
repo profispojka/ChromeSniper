@@ -26,15 +26,15 @@
   const formatRelative = (ts: number): string => {
     const diff = Date.now() - ts;
     const sec = Math.floor(diff / 1000);
-    if (sec < 60) return 'právě teď';
+    if (sec < 60) return 'just now';
     const min = Math.floor(sec / 60);
-    if (min < 60) return `před ${min} min`;
+    if (min < 60) return `${min} min ago`;
     const hr = Math.floor(min / 60);
-    if (hr < 24) return `před ${hr} h`;
+    if (hr < 24) return `${hr} h ago`;
     const day = Math.floor(hr / 24);
-    if (day < 7) return `před ${day} d`;
+    if (day < 7) return `${day} d ago`;
     const d = new Date(ts);
-    return d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const formatSize = (bytes: number): string => {
@@ -136,14 +136,14 @@
     header.style.cssText = `display: flex; align-items: center; justify-content: space-between; gap: 12px;`;
 
     const title = document.createElement('div');
-    title.textContent = 'Historie screenshotů';
+    title.textContent = 'Screenshot history';
     title.style.cssText = `font: 600 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;`;
 
     const headerRight = document.createElement('div');
     headerRight.style.cssText = `display: flex; align-items: center; gap: 8px;`;
 
     const clearAllBtn = document.createElement('button');
-    clearAllBtn.textContent = 'Smazat vše';
+    clearAllBtn.textContent = 'Clear all';
     clearAllBtn.style.cssText = `
       padding: 6px 10px;
       border-radius: 6px;
@@ -216,8 +216,8 @@
         <circle cx="9" cy="9" r="2"/>
         <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
       </svg>
-      <div style="font-weight: 500;">Žádné screenshoty</div>
-      <div style="font-size: 12px; margin-top: 4px;">Po pořízení screenshotu se automaticky uloží sem.</div>
+      <div style="font-weight: 500;">No screenshots</div>
+      <div style="font-size: 12px; margin-top: 4px;">Screenshots are automatically saved here after capture.</div>
     `;
 
     dialog.appendChild(header);
@@ -302,7 +302,7 @@
         thumbWrap.appendChild(thumb);
 
         const kindBadge = document.createElement('span');
-        kindBadge.textContent = item.kind === 'fullpage' ? 'celá stránka' : 'výřez';
+        kindBadge.textContent = item.kind === 'fullpage' ? 'full page' : 'region';
         kindBadge.style.cssText = `
           position: absolute;
           top: 6px;
@@ -352,7 +352,7 @@
       grid.replaceChildren();
       const loading = document.createElement('div');
       loading.style.cssText = `padding: 24px; text-align: center; color: rgba(255,255,255,0.6); grid-column: 1 / -1;`;
-      loading.textContent = 'Načítám…';
+      loading.textContent = 'Loading…';
       grid.appendChild(loading);
       try {
         const res = (await chrome.runtime.sendMessage({ type: 'listScreenshots' })) as ListResponse | undefined;
@@ -364,20 +364,20 @@
         grid.replaceChildren();
         const errEl = document.createElement('div');
         errEl.style.cssText = `padding: 24px; text-align: center; color: rgba(255,120,120,0.85); grid-column: 1 / -1;`;
-        errEl.textContent = 'Načtení historie selhalo: ' + (err instanceof Error ? err.message : String(err));
+        errEl.textContent = 'Failed to load history: ' + (err instanceof Error ? err.message : String(err));
         grid.appendChild(errEl);
       }
     };
 
     clearAllBtn.addEventListener('click', async () => {
-      if (!confirm('Opravdu smazat celou historii screenshotů?')) return;
+      if (!confirm('Really delete the entire screenshot history?')) return;
       try {
         const res = (await chrome.runtime.sendMessage({ type: 'clearScreenshots' })) as AckResponse | undefined;
         if (!res || !res.ok) throw new Error(res && !res.ok ? res.error : 'no response');
-        showToast('Historie smazána');
+        showToast('History cleared');
         await refresh();
       } catch (err) {
-        showToast('Mazání selhalo: ' + (err instanceof Error ? err.message : String(err)));
+        showToast('Delete failed: ' + (err instanceof Error ? err.message : String(err)));
       }
     });
 
@@ -466,7 +466,7 @@
       justify-content: center;
     `;
     const loadingEl = document.createElement('div');
-    loadingEl.textContent = 'Načítám…';
+    loadingEl.textContent = 'Loading…';
     loadingEl.style.cssText = `padding: 24px; color: rgba(255,255,255,0.6);`;
     previewWrap.appendChild(loadingEl);
 
@@ -503,18 +503,18 @@
 
     let fullDataUrl: string | null = null;
 
-    const copyBtn = mkButton('Kopírovat', true, async () => {
+    const copyBtn = mkButton('Copy', true, async () => {
       if (!fullDataUrl) return;
       try {
         const blob = await dataUrlToBlob(fullDataUrl);
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        showToast('Zkopírováno');
+        showToast('Copied');
       } catch (err) {
-        showToast('Kopírování selhalo');
+        showToast('Copy failed');
         console.error(err);
       }
     });
-    const downloadBtn = mkButton('Stáhnout', false, () => {
+    const downloadBtn = mkButton('Download', false, () => {
       if (!fullDataUrl) return;
       const a = document.createElement('a');
       a.href = fullDataUrl;
@@ -525,20 +525,20 @@
       a.click();
       a.remove();
     });
-    const openUrlBtn = mkButton('Otevřít stránku', false, () => {
+    const openUrlBtn = mkButton('Open page', false, () => {
       if (!item.pageUrl) return;
       window.open(item.pageUrl, '_blank', 'noopener');
     });
-    const deleteBtn = mkButton('Smazat', false, async () => {
-      if (!confirm('Smazat tento screenshot z historie?')) return;
+    const deleteBtn = mkButton('Delete', false, async () => {
+      if (!confirm('Delete this screenshot from history?')) return;
       try {
         const res = (await chrome.runtime.sendMessage({ type: 'deleteScreenshot', id: item.id })) as AckResponse | undefined;
         if (!res || !res.ok) throw new Error(res && !res.ok ? res.error : 'no response');
-        showToast('Smazáno');
+        showToast('Deleted');
         close();
         await onChange();
       } catch (err) {
-        showToast('Mazání selhalo: ' + (err instanceof Error ? err.message : String(err)));
+        showToast('Delete failed: ' + (err instanceof Error ? err.message : String(err)));
       }
     });
     deleteBtn.style.color = 'rgba(255, 120, 120, 0.95)';
@@ -595,7 +595,7 @@
       previewWrap.replaceChildren();
       const errEl = document.createElement('div');
       errEl.style.cssText = `padding: 24px; color: rgba(255,120,120,0.85);`;
-      errEl.textContent = 'Načtení selhalo: ' + (err instanceof Error ? err.message : String(err));
+      errEl.textContent = 'Failed to load: ' + (err instanceof Error ? err.message : String(err));
       previewWrap.appendChild(errEl);
     }
   };

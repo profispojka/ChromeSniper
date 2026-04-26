@@ -23,12 +23,12 @@
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) {
-        setStatus('Aktivní záložka nedostupná', 'error');
+        setStatus('Active tab unavailable', 'error');
         btn.disabled = false;
         return;
       }
       if (isRestrictedUrl(tab.url)) {
-        setStatus('Tato stránka neumožňuje rozšíření', 'error');
+        setStatus('Extensions are not allowed on this page', 'error');
         btn.disabled = false;
         return;
       }
@@ -37,12 +37,12 @@
         window.close();
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        setStatus('Stránku znovu načti a zkus to znovu', 'error');
+        setStatus('Reload the page and try again', 'error');
         console.error('sendMessage failed', msg);
         btn.disabled = false;
       }
     } catch (err) {
-      setStatus('Chyba: ' + (err instanceof Error ? err.message : String(err)), 'error');
+      setStatus('Error: ' + (err instanceof Error ? err.message : String(err)), 'error');
       btn.disabled = false;
     }
   };

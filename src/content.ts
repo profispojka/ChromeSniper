@@ -130,7 +130,7 @@
       return;
     }
     if (document.body.style.transform !== '') {
-      showToast('Nejdřív zavřete zoom (Esc)');
+      showToast('Close the zoom first (Esc)');
       return;
     }
     void fullPageApi.run();
@@ -141,7 +141,7 @@
   const startGlobalColorPicker = async () => {
     const Ctor = (window as unknown as { EyeDropper?: EyeDropperCtor }).EyeDropper;
     if (!Ctor) {
-      showToast('Color picker není v tomto prohlížeči podporován');
+      showToast('Color picker is not supported in this browser');
       return;
     }
     try {
@@ -149,7 +149,7 @@
       const hex = result.sRGBHex;
       try {
         await navigator.clipboard.writeText(hex);
-        showToast(`${hex} zkopírováno`);
+        showToast(`${hex} copied`);
       } catch {
         showToast(hex);
       }
@@ -463,11 +463,11 @@
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/png': blob }),
       ]);
-      showToast('Screenshot zkopírován do schránky');
+      showToast('Screenshot copied to clipboard');
       maybeSaveRegionToHistory(blob, sq);
     } catch (err) {
       console.error('Copy failed', err);
-      alert('Kopírování selhalo: ' + (err instanceof Error ? err.message : String(err)));
+      alert('Copy failed: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -477,7 +477,7 @@
       blob = await captureRect(sq.getBoundingClientRect(), currentLayer?.getAnnotations());
     } catch (err) {
       console.error('Capture failed', err);
-      alert('Nepodařilo se pořídit screenshot: ' + (err instanceof Error ? err.message : String(err)));
+      alert('Failed to take screenshot: ' + (err instanceof Error ? err.message : String(err)));
       return;
     }
     maybeSaveRegionToHistory(blob, sq);
@@ -555,7 +555,7 @@
   const openQrModal = async () => {
     if (qrModalOpen) return;
     if (!qrcode) {
-      showToast('QR encoder nedostupný');
+      showToast('QR encoder unavailable');
       return;
     }
     const rawUrl = location.href;
@@ -602,7 +602,7 @@
     const headerRow = document.createElement('div');
     headerRow.style.cssText = `display: flex; align-items: center; justify-content: space-between;`;
     const titleEl = document.createElement('div');
-    titleEl.textContent = 'QR kód stránky';
+    titleEl.textContent = 'Page QR code';
     titleEl.style.cssText = `font: 600 16px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;`;
     const closeX = document.createElement('button');
     closeX.innerHTML = `
@@ -663,7 +663,7 @@
     stripCheckbox.checked = stripPref;
     stripCheckbox.style.cssText = `accent-color: rgba(10, 132, 255, 1); cursor: pointer;`;
     const stripLabel = document.createElement('span');
-    stripLabel.textContent = 'Bez tracking parametrů';
+    stripLabel.textContent = 'Strip tracking parameters';
     stripRow.appendChild(stripCheckbox);
     stripRow.appendChild(stripLabel);
 
@@ -694,9 +694,9 @@
       return b;
     };
 
-    const copyPngBtn = mkActionBtn('Kopírovat PNG', true);
-    const downloadBtn = mkActionBtn('Stáhnout');
-    const copyUrlBtn = mkActionBtn('Kopírovat URL');
+    const copyPngBtn = mkActionBtn('Copy PNG', true);
+    const downloadBtn = mkActionBtn('Download');
+    const copyUrlBtn = mkActionBtn('Copy URL');
 
     buttonsRow.appendChild(copyPngBtn);
     buttonsRow.appendChild(downloadBtn);
@@ -734,7 +734,7 @@
           ctx.fillStyle = '#cc0000';
           ctx.font = '14px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('URL je příliš dlouhá', canvas.width / 2, canvas.height / 2);
+          ctx.fillText('URL is too long', canvas.width / 2, canvas.height / 2);
         }
       }
     };
@@ -742,7 +742,7 @@
 
     if (/^(chrome|chrome-extension|about|file):/i.test(rawUrl)) {
       const note = document.createElement('div');
-      note.textContent = 'Tato URL funguje jen v daném prohlížeči nebo zařízení.';
+      note.textContent = 'This URL only works in the same browser or device.';
       note.style.cssText = `
         font-size: 12px;
         color: rgba(255, 200, 0, 0.85);
@@ -784,15 +784,15 @@
     copyPngBtn.addEventListener('click', () => {
       canvas.toBlob(async (blob) => {
         if (!blob) {
-          showToast('Vytvoření obrázku selhalo');
+          showToast('Failed to create image');
           return;
         }
         try {
           await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          showToast('QR zkopírován do schránky');
+          showToast('QR copied to clipboard');
         } catch (err) {
           console.error('QR copy failed', err);
-          showToast('Kopírování selhalo');
+          showToast('Copy failed');
         }
       }, 'image/png');
     });
@@ -816,9 +816,9 @@
     copyUrlBtn.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(currentUrl);
-        showToast('URL zkopírována');
+        showToast('URL copied');
       } catch {
-        showToast('Kopírování URL selhalo');
+        showToast('URL copy failed');
       }
     });
 
@@ -950,10 +950,10 @@
     if (!hex) return;
     try {
       await navigator.clipboard.writeText(hex);
-      showToast(`${hex} zkopírováno`);
+      showToast(`${hex} copied`);
     } catch (err) {
       console.error('Hex copy failed', err);
-      showToast('Kopírování barvy selhalo');
+      showToast('Color copy failed');
     }
   };
 
@@ -1048,9 +1048,9 @@
     const origH = sqRectInit.height / scale;
     const pickerAvailable = origW >= 10 && origH >= 10;
 
-    primaryRow.appendChild(makeIconButton(copySvg, 'Kopírovat (⌘C)', () => copyRect(sq)));
-    primaryRow.appendChild(makeIconButton(shareSvg, 'Sdílet / stáhnout', () => shareRect(sq)));
-    primaryRow.appendChild(makeIconButton(qrSvg, 'QR kód stránky (Q)', () => void openQrModal()));
+    primaryRow.appendChild(makeIconButton(copySvg, 'Copy (⌘C)', () => copyRect(sq)));
+    primaryRow.appendChild(makeIconButton(shareSvg, 'Share / download', () => shareRect(sq)));
+    primaryRow.appendChild(makeIconButton(qrSvg, 'Page QR code (Q)', () => void openQrModal()));
 
     let pickerBtn: HTMLButtonElement | null = null;
     if (pickerAvailable) {
@@ -1140,7 +1140,7 @@
 
       const btn = document.createElement('button');
       btn.innerHTML = closeSvg;
-      btn.setAttribute('aria-label', 'Zpět (Esc)');
+      btn.setAttribute('aria-label', 'Back (Esc)');
       btn.style.cssText = `
         position: fixed;
         top: 16px;
@@ -1187,8 +1187,8 @@
         btn.style.opacity = '1';
       });
     };
-    primaryRow.appendChild(makeIconButton(plusSvg, 'Přiblížit ještě víc', enterDeepZoom));
-    primaryRow.appendChild(makeIconButton(closeSvg, 'Zavřít (Esc)', closeZoom));
+    primaryRow.appendChild(makeIconButton(plusSvg, 'Zoom in further', enterDeepZoom));
+    primaryRow.appendChild(makeIconButton(closeSvg, 'Close (Esc)', closeZoom));
 
     const setPickerActive = (on: boolean) => {
       pickerEnabled = on;
@@ -1199,7 +1199,7 @@
           pickerBtn.style.color = 'white';
         }
         if (!pickerImageData) {
-          showToast('Načítám barvy…');
+          showToast('Loading colors…');
         }
       } else {
         sq.style.cursor = '';
@@ -1356,9 +1356,9 @@
         return btn;
       };
 
-      annotRow.appendChild(makeToolButton(penSvg, 'Tužka (P)', 'pen'));
+      annotRow.appendChild(makeToolButton(penSvg, 'Pen (P)', 'pen'));
 
-      const clearBtn = makeIconButton(trashSvg, 'Smazat vše', () => {
+      const clearBtn = makeIconButton(trashSvg, 'Clear all', () => {
         layer.clear();
       });
       annotRow.appendChild(clearBtn);

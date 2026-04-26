@@ -44,7 +44,7 @@ Stav: rozpracováno. Tento soubor lze po publikaci smazat.
 
 ## 🟡 Doporučené (před releasem, ale neblokující)
 
-- [ ] Doplnit `manifest.json`:
+- [x] Doplnit `manifest.json`:
   - `"author": "Jirka Enty"`
   - `"homepage_url": "https://entyai.cz"`
 - [x] `LICENSE` soubor v repu (MIT je nejjednodušší)

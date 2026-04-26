@@ -2,7 +2,9 @@
   "manifest_version": 3,
   "name": "Snipper",
   "version": "1.0.0",
-  "description": "Snímky stránky, pipeta barev, anotace a historie. Vyber výřez tažením, upravuj a uloží se ti do schránky i historie.",
+  "description": "Page screenshots, color picker, annotations, and history. Drag to select a region, edit, and it's saved to your clipboard and history.",
+  "author": "Jirka Enty",
+  "homepage_url": "https://entyai.cz",
   "permissions": ["activeTab", "storage", "clipboardWrite"],
   "host_permissions": ["<all_urls>"],
   "icons": {

@@ -75,7 +75,7 @@
           <animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/>
         </circle>
       </svg>
-      <span data-role="msg" style="font-variant-numeric: tabular-nums;">Připravuji…</span>
+      <span data-role="msg" style="font-variant-numeric: tabular-nums;">Preparing…</span>
       <button data-role="cancel" style="
         margin-left: 4px;
         padding: 4px 10px;
@@ -85,7 +85,7 @@
         color: rgba(255,255,255,0.9);
         font: 500 12px/1 -apple-system, BlinkMacSystemFont, sans-serif;
         cursor: pointer;
-      ">Zrušit</button>
+      ">Cancel</button>
     `;
     document.documentElement.appendChild(wrap);
     requestAnimationFrame(() => {
@@ -100,13 +100,13 @@
     cancelBtn.addEventListener('click', () => {
       cancelBtn.disabled = true;
       cancelBtn.style.opacity = '0.5';
-      msgEl.textContent = 'Ruším…';
+      msgEl.textContent = 'Cancelling…';
       cancelCb?.();
     });
 
     return {
       update: (current, total) => {
-        msgEl.textContent = `Snímám ${current}/${total} dlaždic…`;
+        msgEl.textContent = `Capturing tile ${current}/${total}…`;
       },
       setMessage: (text) => {
         msgEl.textContent = text;
@@ -334,7 +334,7 @@
     title.style.cssText = `font: 600 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;`;
     const sizeKb = Math.round(result.blob.size / 1024);
     const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
-    title.textContent = `Celá stránka — ${result.width}×${result.height} · ${sizeStr}`;
+    title.textContent = `Full page — ${result.width}×${result.height} · ${sizeStr}`;
 
     const closeX = document.createElement('button');
     closeX.innerHTML = `
@@ -378,7 +378,7 @@
 
     if (result.truncated) {
       const note = document.createElement('div');
-      note.textContent = 'Stránka byla oříznuta na maximální velikost canvasu (16k px).';
+      note.textContent = 'The page was clipped to the maximum canvas size (16k px).';
       note.style.cssText = `font-size: 12px; color: rgba(255, 200, 0, 0.85);`;
       dialog.appendChild(note);
     }
@@ -414,17 +414,17 @@
       return b;
     };
 
-    const copyBtn = mkButton('Kopírovat', true, async () => {
+    const copyBtn = mkButton('Copy', true, async () => {
       try {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': result.blob })]);
-        showToast('Screenshot zkopírován');
+        showToast('Screenshot copied');
       } catch (err) {
         console.error('Full-page copy failed', err);
-        showToast('Kopírování selhalo');
+        showToast('Copy failed');
       }
     });
 
-    const downloadBtn = mkButton('Stáhnout', false, () => {
+    const downloadBtn = mkButton('Download', false, () => {
       const a = document.createElement('a');
       a.href = url;
       let host = 'page';
@@ -504,7 +504,7 @@
 
   const runFullPageCapture = async (): Promise<void> => {
     if (inFlight) {
-      showToast('Snímání už běží');
+      showToast('Capture already running');
       return;
     }
     inFlight = true;
@@ -526,10 +526,10 @@
     } catch (err) {
       progress.close();
       if (cancelled || (err instanceof Error && err.message === 'cancelled')) {
-        showToast('Snímání zrušeno');
+        showToast('Capture cancelled');
       } else {
         console.error('Full page capture failed', err);
-        showToast('Snímání selhalo: ' + (err instanceof Error ? err.message : String(err)));
+        showToast('Capture failed: ' + (err instanceof Error ? err.message : String(err)));
       }
     } finally {
       inFlight = false;

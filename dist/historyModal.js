@@ -1,38 +1,4 @@
-"use strict";
-(() => {
-  // src/historyModal.ts
-  (() => {
-    let modalOpen = false;
-    const formatRelative = (ts) => {
-      const diff = Date.now() - ts;
-      const sec = Math.floor(diff / 1e3);
-      if (sec < 60) return "pr\xE1v\u011B te\u010F";
-      const min = Math.floor(sec / 60);
-      if (min < 60) return `p\u0159ed ${min} min`;
-      const hr = Math.floor(min / 60);
-      if (hr < 24) return `p\u0159ed ${hr} h`;
-      const day = Math.floor(hr / 24);
-      if (day < 7) return `p\u0159ed ${day} d`;
-      const d = new Date(ts);
-      return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "short", year: "numeric" });
-    };
-    const formatSize = (bytes) => {
-      if (bytes < 1024) return `${bytes} B`;
-      const kb = bytes / 1024;
-      if (kb < 1024) return `${Math.round(kb)} KB`;
-      return `${(kb / 1024).toFixed(1)} MB`;
-    };
-    const hostOf = (url) => {
-      try {
-        return new URL(url).hostname;
-      } catch {
-        return url;
-      }
-    };
-    const showToast = (text) => {
-      const toast = document.createElement("div");
-      toast.dataset.dsdInternal = "1";
-      toast.style.cssText = `
+"use strict";(()=>{(()=>{let T=!1,B=t=>{let r=Date.now()-t,a=Math.floor(r/1e3);if(a<60)return"just now";let d=Math.floor(a/60);if(d<60)return`${d} min ago`;let g=Math.floor(d/60);if(g<24)return`${g} h ago`;let l=Math.floor(g/24);return l<7?`${l} d ago`:new Date(t).toLocaleDateString("en-US",{day:"numeric",month:"short",year:"numeric"})},M=t=>{if(t<1024)return`${t} B`;let r=t/1024;return r<1024?`${Math.round(r)} KB`:`${(r/1024).toFixed(1)} MB`},L=t=>{try{return new URL(t).hostname}catch{return t}},E=t=>{let r=document.createElement("div");r.dataset.dsdInternal="1",r.style.cssText=`
       position: fixed;
       top: 32px;
       left: 50%;
@@ -51,29 +17,7 @@
       opacity: 0;
       transition: opacity 0.2s ease, transform 0.2s ease;
       max-width: min(80vw, 520px);
-    `;
-      toast.textContent = text;
-      document.documentElement.appendChild(toast);
-      requestAnimationFrame(() => {
-        toast.style.opacity = "1";
-        toast.style.transform = "translate(-50%, 0)";
-      });
-      setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.transform = "translate(-50%, -12px)";
-        setTimeout(() => toast.remove(), 220);
-      }, 2200);
-    };
-    const dataUrlToBlob = async (dataUrl) => {
-      const res = await fetch(dataUrl);
-      return await res.blob();
-    };
-    const openHistoryModal = async () => {
-      if (modalOpen) return;
-      modalOpen = true;
-      const backdrop = document.createElement("div");
-      backdrop.dataset.dsdInternal = "1";
-      backdrop.style.cssText = `
+    `,r.textContent=t,document.documentElement.appendChild(r),requestAnimationFrame(()=>{r.style.opacity="1",r.style.transform="translate(-50%, 0)"}),setTimeout(()=>{r.style.opacity="0",r.style.transform="translate(-50%, -12px)",setTimeout(()=>r.remove(),220)},2200)},U=async t=>await(await fetch(t)).blob(),$=async()=>{if(T)return;T=!0;let t=document.createElement("div");t.dataset.dsdInternal="1",t.style.cssText=`
       position: fixed;
       inset: 0;
       z-index: 2147483647;
@@ -86,9 +30,7 @@
       opacity: 0;
       transition: opacity 0.2s ease;
       pointer-events: auto;
-    `;
-      const dialog = document.createElement("div");
-      dialog.style.cssText = `
+    `;let r=document.createElement("div");r.style.cssText=`
       width: min(94vw, 880px);
       max-height: 90vh;
       margin: 16px;
@@ -107,17 +49,7 @@
       flex-direction: column;
       gap: 12px;
       overflow: hidden;
-    `;
-      const header = document.createElement("div");
-      header.style.cssText = `display: flex; align-items: center; justify-content: space-between; gap: 12px;`;
-      const title = document.createElement("div");
-      title.textContent = "Historie screenshot\u016F";
-      title.style.cssText = `font: 600 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;`;
-      const headerRight = document.createElement("div");
-      headerRight.style.cssText = `display: flex; align-items: center; gap: 8px;`;
-      const clearAllBtn = document.createElement("button");
-      clearAllBtn.textContent = "Smazat v\u0161e";
-      clearAllBtn.style.cssText = `
+    `;let a=document.createElement("div");a.style.cssText="display: flex; align-items: center; justify-content: space-between; gap: 12px;";let d=document.createElement("div");d.textContent="Screenshot history",d.style.cssText="font: 600 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;";let g=document.createElement("div");g.style.cssText="display: flex; align-items: center; gap: 8px;";let l=document.createElement("button");l.textContent="Clear all",l.style.cssText=`
       padding: 6px 10px;
       border-radius: 6px;
       border: 1px solid rgba(255, 80, 80, 0.3);
@@ -126,40 +58,17 @@
       font: 500 12px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       cursor: pointer;
       transition: background 0.15s ease;
-    `;
-      clearAllBtn.addEventListener("mouseenter", () => {
-        clearAllBtn.style.background = "rgba(255, 80, 80, 0.18)";
-      });
-      clearAllBtn.addEventListener("mouseleave", () => {
-        clearAllBtn.style.background = "rgba(255, 80, 80, 0.08)";
-      });
-      const closeX = document.createElement("button");
-      closeX.innerHTML = `
+    `,l.addEventListener("mouseenter",()=>{l.style.background="rgba(255, 80, 80, 0.18)"}),l.addEventListener("mouseleave",()=>{l.style.background="rgba(255, 80, 80, 0.08)"});let c=document.createElement("button");c.innerHTML=`
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
-      </svg>`;
-      closeX.style.cssText = `
+      </svg>`,c.style.cssText=`
       width: 28px; height: 28px;
       display: inline-flex; align-items: center; justify-content: center;
       border: none; background: transparent;
       color: rgba(255, 255, 255, 0.7);
       border-radius: 6px; cursor: pointer; padding: 0;
       transition: background 0.15s ease, color 0.15s ease;
-    `;
-      closeX.addEventListener("mouseenter", () => {
-        closeX.style.background = "rgba(255, 255, 255, 0.1)";
-        closeX.style.color = "rgba(255, 255, 255, 1)";
-      });
-      closeX.addEventListener("mouseleave", () => {
-        closeX.style.background = "transparent";
-        closeX.style.color = "rgba(255, 255, 255, 0.7)";
-      });
-      headerRight.appendChild(clearAllBtn);
-      headerRight.appendChild(closeX);
-      header.appendChild(title);
-      header.appendChild(headerRight);
-      const grid = document.createElement("div");
-      grid.style.cssText = `
+    `,c.addEventListener("mouseenter",()=>{c.style.background="rgba(255, 255, 255, 0.1)",c.style.color="rgba(255, 255, 255, 1)"}),c.addEventListener("mouseleave",()=>{c.style.background="transparent",c.style.color="rgba(255, 255, 255, 0.7)"}),g.appendChild(l),g.appendChild(c),a.appendChild(d),a.appendChild(g);let p=document.createElement("div");p.style.cssText=`
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 10px;
@@ -168,9 +77,7 @@
       flex: 1 1 auto;
       min-height: 200px;
       max-height: 70vh;
-    `;
-      const emptyState = document.createElement("div");
-      emptyState.style.cssText = `
+    `;let u=document.createElement("div");u.style.cssText=`
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -178,57 +85,15 @@
       padding: 48px 16px;
       color: rgba(255, 255, 255, 0.55);
       text-align: center;
-    `;
-      emptyState.innerHTML = `
+    `,u.innerHTML=`
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.5; margin-bottom: 12px;">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
         <circle cx="9" cy="9" r="2"/>
         <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
       </svg>
-      <div style="font-weight: 500;">\u017D\xE1dn\xE9 screenshoty</div>
-      <div style="font-size: 12px; margin-top: 4px;">Po po\u0159\xEDzen\xED screenshotu se automaticky ulo\u017E\xED sem.</div>
-    `;
-      dialog.appendChild(header);
-      dialog.appendChild(grid);
-      backdrop.appendChild(dialog);
-      document.documentElement.appendChild(backdrop);
-      let settled = false;
-      const close = () => {
-        if (settled) return;
-        settled = true;
-        backdrop.style.opacity = "0";
-        dialog.style.transform = "scale(0.96)";
-        setTimeout(() => backdrop.remove(), 200);
-        document.removeEventListener("keydown", onKey, true);
-        modalOpen = false;
-      };
-      const onKey = (e) => {
-        if (e.key === "Escape") {
-          e.stopPropagation();
-          e.preventDefault();
-          close();
-        }
-      };
-      document.addEventListener("keydown", onKey, true);
-      closeX.addEventListener("click", close);
-      backdrop.addEventListener("click", (e) => {
-        if (e.target === backdrop) close();
-      });
-      requestAnimationFrame(() => {
-        backdrop.style.opacity = "1";
-        dialog.style.transform = "scale(1)";
-      });
-      const renderGrid = (items) => {
-        grid.replaceChildren();
-        if (items.length === 0) {
-          grid.style.display = "flex";
-          grid.appendChild(emptyState);
-          return;
-        }
-        grid.style.display = "grid";
-        for (const item of items) {
-          const card = document.createElement("div");
-          card.style.cssText = `
+      <div style="font-weight: 500;">No screenshots</div>
+      <div style="font-size: 12px; margin-top: 4px;">Screenshots are automatically saved here after capture.</div>
+    `,r.appendChild(a),r.appendChild(p),t.appendChild(r),document.documentElement.appendChild(t);let m=!1,v=()=>{m||(m=!0,t.style.opacity="0",r.style.transform="scale(0.96)",setTimeout(()=>t.remove(),200),document.removeEventListener("keydown",x,!0),T=!1)},x=o=>{o.key==="Escape"&&(o.stopPropagation(),o.preventDefault(),v())};document.addEventListener("keydown",x,!0),c.addEventListener("click",v),t.addEventListener("click",o=>{o.target===t&&v()}),requestAnimationFrame(()=>{t.style.opacity="1",r.style.transform="scale(1)"});let C=o=>{if(p.replaceChildren(),o.length===0){p.style.display="flex",p.appendChild(u);return}p.style.display="grid";for(let n of o){let i=document.createElement("div");i.style.cssText=`
           display: flex;
           flex-direction: column;
           background: rgba(255, 255, 255, 0.04);
@@ -237,35 +102,17 @@
           overflow: hidden;
           cursor: pointer;
           transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-        `;
-          card.addEventListener("mouseenter", () => {
-            card.style.background = "rgba(255, 255, 255, 0.07)";
-            card.style.borderColor = "rgba(255, 255, 255, 0.14)";
-          });
-          card.addEventListener("mouseleave", () => {
-            card.style.background = "rgba(255, 255, 255, 0.04)";
-            card.style.borderColor = "rgba(255, 255, 255, 0.08)";
-          });
-          const thumbWrap = document.createElement("div");
-          thumbWrap.style.cssText = `
+        `,i.addEventListener("mouseenter",()=>{i.style.background="rgba(255, 255, 255, 0.07)",i.style.borderColor="rgba(255, 255, 255, 0.14)"}),i.addEventListener("mouseleave",()=>{i.style.background="rgba(255, 255, 255, 0.04)",i.style.borderColor="rgba(255, 255, 255, 0.08)"});let h=document.createElement("div");h.style.cssText=`
           position: relative;
           aspect-ratio: 4 / 3;
           background: rgba(0, 0, 0, 0.4);
           overflow: hidden;
-        `;
-          const thumb = document.createElement("img");
-          thumb.src = item.thumbDataUrl;
-          thumb.alt = item.pageTitle || item.pageUrl;
-          thumb.style.cssText = `
+        `;let w=document.createElement("img");w.src=n.thumbDataUrl,w.alt=n.pageTitle||n.pageUrl,w.style.cssText=`
           display: block;
           width: 100%;
           height: 100%;
-          object-fit: ${item.kind === "fullpage" ? "contain" : "cover"};
-        `;
-          thumbWrap.appendChild(thumb);
-          const kindBadge = document.createElement("span");
-          kindBadge.textContent = item.kind === "fullpage" ? "cel\xE1 str\xE1nka" : "v\xFD\u0159ez";
-          kindBadge.style.cssText = `
+          object-fit: ${n.kind==="fullpage"?"contain":"cover"};
+        `,h.appendChild(w);let f=document.createElement("span");f.textContent=n.kind==="fullpage"?"full page":"region",f.style.cssText=`
           position: absolute;
           top: 6px;
           left: 6px;
@@ -275,76 +122,19 @@
           font: 500 10px/1.2 -apple-system, BlinkMacSystemFont, sans-serif;
           border-radius: 4px;
           letter-spacing: 0.02em;
-        `;
-          thumbWrap.appendChild(kindBadge);
-          const meta = document.createElement("div");
-          meta.style.cssText = `padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;`;
-          const titleLine = document.createElement("div");
-          titleLine.textContent = item.pageTitle || hostOf(item.pageUrl);
-          titleLine.title = item.pageTitle || item.pageUrl;
-          titleLine.style.cssText = `
+        `,h.appendChild(f);let k=document.createElement("div");k.style.cssText="padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;";let e=document.createElement("div");e.textContent=n.pageTitle||L(n.pageUrl),e.title=n.pageTitle||n.pageUrl,e.style.cssText=`
           font: 500 12px/1.3 -apple-system, BlinkMacSystemFont, sans-serif;
           color: rgba(255, 255, 255, 0.95);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-        `;
-          const subLine = document.createElement("div");
-          subLine.textContent = `${formatRelative(item.createdAt)} \xB7 ${item.width}\xD7${item.height} \xB7 ${formatSize(item.size)}`;
-          subLine.style.cssText = `
+        `;let s=document.createElement("div");s.textContent=`${B(n.createdAt)} \xB7 ${n.width}\xD7${n.height} \xB7 ${M(n.size)}`,s.style.cssText=`
           font: 400 11px/1.3 -apple-system, BlinkMacSystemFont, sans-serif;
           color: rgba(255, 255, 255, 0.55);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-        `;
-          meta.appendChild(titleLine);
-          meta.appendChild(subLine);
-          card.appendChild(thumbWrap);
-          card.appendChild(meta);
-          card.addEventListener("click", () => {
-            void openPreview(item, refresh);
-          });
-          grid.appendChild(card);
-        }
-      };
-      const refresh = async () => {
-        grid.replaceChildren();
-        const loading = document.createElement("div");
-        loading.style.cssText = `padding: 24px; text-align: center; color: rgba(255,255,255,0.6); grid-column: 1 / -1;`;
-        loading.textContent = "Na\u010D\xEDt\xE1m\u2026";
-        grid.appendChild(loading);
-        try {
-          const res = await chrome.runtime.sendMessage({ type: "listScreenshots" });
-          if (!res || !res.ok) {
-            throw new Error(res && !res.ok ? res.error : "no response");
-          }
-          renderGrid(res.items);
-        } catch (err) {
-          grid.replaceChildren();
-          const errEl = document.createElement("div");
-          errEl.style.cssText = `padding: 24px; text-align: center; color: rgba(255,120,120,0.85); grid-column: 1 / -1;`;
-          errEl.textContent = "Na\u010Dten\xED historie selhalo: " + (err instanceof Error ? err.message : String(err));
-          grid.appendChild(errEl);
-        }
-      };
-      clearAllBtn.addEventListener("click", async () => {
-        if (!confirm("Opravdu smazat celou historii screenshot\u016F?")) return;
-        try {
-          const res = await chrome.runtime.sendMessage({ type: "clearScreenshots" });
-          if (!res || !res.ok) throw new Error(res && !res.ok ? res.error : "no response");
-          showToast("Historie smaz\xE1na");
-          await refresh();
-        } catch (err) {
-          showToast("Maz\xE1n\xED selhalo: " + (err instanceof Error ? err.message : String(err)));
-        }
-      });
-      void refresh();
-    };
-    const openPreview = async (item, onChange) => {
-      const backdrop = document.createElement("div");
-      backdrop.dataset.dsdInternal = "1";
-      backdrop.style.cssText = `
+        `,k.appendChild(e),k.appendChild(s),i.appendChild(h),i.appendChild(k),i.addEventListener("click",()=>{F(n,y)}),p.appendChild(i)}},y=async()=>{p.replaceChildren();let o=document.createElement("div");o.style.cssText="padding: 24px; text-align: center; color: rgba(255,255,255,0.6); grid-column: 1 / -1;",o.textContent="Loading\u2026",p.appendChild(o);try{let n=await chrome.runtime.sendMessage({type:"listScreenshots"});if(!n||!n.ok)throw new Error(n&&!n.ok?n.error:"no response");C(n.items)}catch(n){p.replaceChildren();let i=document.createElement("div");i.style.cssText="padding: 24px; text-align: center; color: rgba(255,120,120,0.85); grid-column: 1 / -1;",i.textContent="Failed to load history: "+(n instanceof Error?n.message:String(n)),p.appendChild(i)}};l.addEventListener("click",async()=>{if(confirm("Really delete the entire screenshot history?"))try{let o=await chrome.runtime.sendMessage({type:"clearScreenshots"});if(!o||!o.ok)throw new Error(o&&!o.ok?o.error:"no response");E("History cleared"),await y()}catch(o){E("Delete failed: "+(o instanceof Error?o.message:String(o)))}}),y()},F=async(t,r)=>{let a=document.createElement("div");a.dataset.dsdInternal="1",a.style.cssText=`
       position: fixed;
       inset: 0;
       z-index: 2147483647;
@@ -357,9 +147,7 @@
       opacity: 0;
       transition: opacity 0.2s ease;
       pointer-events: auto;
-    `;
-      const dialog = document.createElement("div");
-      dialog.style.cssText = `
+    `;let d=document.createElement("div");d.style.cssText=`
       width: min(94vw, 980px);
       max-height: 92vh;
       margin: 16px;
@@ -376,41 +164,16 @@
       flex-direction: column;
       gap: 10px;
       overflow: hidden;
-    `;
-      const head = document.createElement("div");
-      head.style.cssText = `display: flex; align-items: center; gap: 10px;`;
-      const titleEl = document.createElement("div");
-      titleEl.style.cssText = `flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px;`;
-      const titleText = document.createElement("div");
-      titleText.textContent = item.pageTitle || hostOf(item.pageUrl);
-      titleText.style.cssText = `font: 600 14px/1.3 -apple-system, BlinkMacSystemFont, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
-      const subText = document.createElement("div");
-      subText.textContent = `${item.width}\xD7${item.height} \xB7 ${formatSize(item.size)} \xB7 ${formatRelative(item.createdAt)}`;
-      subText.style.cssText = `font-size: 11px; color: rgba(255,255,255,0.6);`;
-      titleEl.appendChild(titleText);
-      titleEl.appendChild(subText);
-      const closeX = document.createElement("button");
-      closeX.innerHTML = `
+    `;let g=document.createElement("div");g.style.cssText="display: flex; align-items: center; gap: 10px;";let l=document.createElement("div");l.style.cssText="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px;";let c=document.createElement("div");c.textContent=t.pageTitle||L(t.pageUrl),c.style.cssText="font: 600 14px/1.3 -apple-system, BlinkMacSystemFont, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";let p=document.createElement("div");p.textContent=`${t.width}\xD7${t.height} \xB7 ${M(t.size)} \xB7 ${B(t.createdAt)}`,p.style.cssText="font-size: 11px; color: rgba(255,255,255,0.6);",l.appendChild(c),l.appendChild(p);let u=document.createElement("button");u.innerHTML=`
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
         <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
-      </svg>`;
-      closeX.style.cssText = `
+      </svg>`,u.style.cssText=`
       width: 28px; height: 28px;
       display: inline-flex; align-items: center; justify-content: center;
       border: none; background: transparent;
       color: rgba(255, 255, 255, 0.7);
       border-radius: 6px; cursor: pointer; padding: 0;
-    `;
-      closeX.addEventListener("mouseenter", () => {
-        closeX.style.background = "rgba(255,255,255,0.1)";
-      });
-      closeX.addEventListener("mouseleave", () => {
-        closeX.style.background = "transparent";
-      });
-      head.appendChild(titleEl);
-      head.appendChild(closeX);
-      const previewWrap = document.createElement("div");
-      previewWrap.style.cssText = `
+    `,u.addEventListener("mouseenter",()=>{u.style.background="rgba(255,255,255,0.1)"}),u.addEventListener("mouseleave",()=>{u.style.background="transparent"}),g.appendChild(l),g.appendChild(u);let m=document.createElement("div");m.style.cssText=`
       flex: 1 1 auto;
       min-height: 0;
       max-height: 64vh;
@@ -421,136 +184,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
-    `;
-      const loadingEl = document.createElement("div");
-      loadingEl.textContent = "Na\u010D\xEDt\xE1m\u2026";
-      loadingEl.style.cssText = `padding: 24px; color: rgba(255,255,255,0.6);`;
-      previewWrap.appendChild(loadingEl);
-      const buttons = document.createElement("div");
-      buttons.style.cssText = `display: flex; gap: 8px; flex-wrap: wrap;`;
-      const mkButton = (label, primary, onClick) => {
-        const b = document.createElement("button");
-        b.textContent = label;
-        b.style.cssText = `
+    `;let v=document.createElement("div");v.textContent="Loading\u2026",v.style.cssText="padding: 24px; color: rgba(255,255,255,0.6);",m.appendChild(v);let x=document.createElement("div");x.style.cssText="display: flex; gap: 8px; flex-wrap: wrap;";let C=(e,s,S)=>{let b=document.createElement("button");return b.textContent=e,b.style.cssText=`
         flex: 1 1 auto;
         min-width: 0;
         padding: 9px 12px;
         border-radius: 8px;
-        border: 1px solid ${primary ? "transparent" : "rgba(255, 255, 255, 0.12)"};
-        background: ${primary ? "rgba(10, 132, 255, 1)" : "rgba(255, 255, 255, 0.06)"};
-        color: ${primary ? "white" : "rgba(255, 255, 255, 0.95)"};
+        border: 1px solid ${s?"transparent":"rgba(255, 255, 255, 0.12)"};
+        background: ${s?"rgba(10, 132, 255, 1)":"rgba(255, 255, 255, 0.06)"};
+        color: ${s?"white":"rgba(255, 255, 255, 0.95)"};
         font: 500 13px/1 -apple-system, BlinkMacSystemFont, sans-serif;
         cursor: pointer;
         transition: background 0.15s ease;
-      `;
-        b.addEventListener("mouseenter", () => {
-          b.style.background = primary ? "rgba(10, 132, 255, 0.85)" : "rgba(255, 255, 255, 0.12)";
-        });
-        b.addEventListener("mouseleave", () => {
-          b.style.background = primary ? "rgba(10, 132, 255, 1)" : "rgba(255, 255, 255, 0.06)";
-        });
-        b.addEventListener("click", (e) => {
-          e.stopPropagation();
-          onClick();
-        });
-        return b;
-      };
-      let fullDataUrl = null;
-      const copyBtn = mkButton("Kop\xEDrovat", true, async () => {
-        if (!fullDataUrl) return;
-        try {
-          const blob = await dataUrlToBlob(fullDataUrl);
-          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-          showToast("Zkop\xEDrov\xE1no");
-        } catch (err) {
-          showToast("Kop\xEDrov\xE1n\xED selhalo");
-          console.error(err);
-        }
-      });
-      const downloadBtn = mkButton("St\xE1hnout", false, () => {
-        if (!fullDataUrl) return;
-        const a = document.createElement("a");
-        a.href = fullDataUrl;
-        const host = hostOf(item.pageUrl) || "screenshot";
-        const stamp = new Date(item.createdAt).toISOString().replace(/[:.]/g, "-").slice(0, 19);
-        a.download = `${host}-${stamp}.png`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      });
-      const openUrlBtn = mkButton("Otev\u0159\xEDt str\xE1nku", false, () => {
-        if (!item.pageUrl) return;
-        window.open(item.pageUrl, "_blank", "noopener");
-      });
-      const deleteBtn = mkButton("Smazat", false, async () => {
-        if (!confirm("Smazat tento screenshot z historie?")) return;
-        try {
-          const res = await chrome.runtime.sendMessage({ type: "deleteScreenshot", id: item.id });
-          if (!res || !res.ok) throw new Error(res && !res.ok ? res.error : "no response");
-          showToast("Smaz\xE1no");
-          close();
-          await onChange();
-        } catch (err) {
-          showToast("Maz\xE1n\xED selhalo: " + (err instanceof Error ? err.message : String(err)));
-        }
-      });
-      deleteBtn.style.color = "rgba(255, 120, 120, 0.95)";
-      deleteBtn.style.borderColor = "rgba(255, 80, 80, 0.3)";
-      buttons.appendChild(copyBtn);
-      buttons.appendChild(downloadBtn);
-      if (item.pageUrl) buttons.appendChild(openUrlBtn);
-      buttons.appendChild(deleteBtn);
-      dialog.appendChild(head);
-      dialog.appendChild(previewWrap);
-      dialog.appendChild(buttons);
-      backdrop.appendChild(dialog);
-      document.documentElement.appendChild(backdrop);
-      let settled = false;
-      const close = () => {
-        if (settled) return;
-        settled = true;
-        backdrop.style.opacity = "0";
-        dialog.style.transform = "scale(0.96)";
-        setTimeout(() => backdrop.remove(), 200);
-        document.removeEventListener("keydown", onKey, true);
-      };
-      const onKey = (e) => {
-        if (e.key === "Escape") {
-          e.stopPropagation();
-          e.preventDefault();
-          close();
-        }
-      };
-      document.addEventListener("keydown", onKey, true);
-      closeX.addEventListener("click", close);
-      backdrop.addEventListener("click", (e) => {
-        if (e.target === backdrop) close();
-      });
-      requestAnimationFrame(() => {
-        backdrop.style.opacity = "1";
-        dialog.style.transform = "scale(1)";
-      });
-      try {
-        const res = await chrome.runtime.sendMessage({ type: "getScreenshot", id: item.id });
-        if (!res || !res.ok) throw new Error(res && !res.ok ? res.error : "no response");
-        fullDataUrl = res.dataUrl;
-        previewWrap.replaceChildren();
-        const img = document.createElement("img");
-        img.src = res.dataUrl;
-        img.style.cssText = `display: block; max-width: 100%; height: auto; ${item.kind === "fullpage" ? "" : "max-height: 64vh; object-fit: contain;"}`;
-        previewWrap.appendChild(img);
-      } catch (err) {
-        previewWrap.replaceChildren();
-        const errEl = document.createElement("div");
-        errEl.style.cssText = `padding: 24px; color: rgba(255,120,120,0.85);`;
-        errEl.textContent = "Na\u010Dten\xED selhalo: " + (err instanceof Error ? err.message : String(err));
-        previewWrap.appendChild(errEl);
-      }
-    };
-    window.__dsdHistory = {
-      open: openHistoryModal,
-      isOpen: () => modalOpen
-    };
-  })();
-})();
-//# sourceMappingURL=historyModal.js.map
+      `,b.addEventListener("mouseenter",()=>{b.style.background=s?"rgba(10, 132, 255, 0.85)":"rgba(255, 255, 255, 0.12)"}),b.addEventListener("mouseleave",()=>{b.style.background=s?"rgba(10, 132, 255, 1)":"rgba(255, 255, 255, 0.06)"}),b.addEventListener("click",H=>{H.stopPropagation(),S()}),b},y=null,o=C("Copy",!0,async()=>{if(y)try{let e=await U(y);await navigator.clipboard.write([new ClipboardItem({"image/png":e})]),E("Copied")}catch{E("Copy failed")}}),n=C("Download",!1,()=>{if(!y)return;let e=document.createElement("a");e.href=y;let s=L(t.pageUrl)||"screenshot",S=new Date(t.createdAt).toISOString().replace(/[:.]/g,"-").slice(0,19);e.download=`${s}-${S}.png`,document.body.appendChild(e),e.click(),e.remove()}),i=C("Open page",!1,()=>{t.pageUrl&&window.open(t.pageUrl,"_blank","noopener")}),h=C("Delete",!1,async()=>{if(confirm("Delete this screenshot from history?"))try{let e=await chrome.runtime.sendMessage({type:"deleteScreenshot",id:t.id});if(!e||!e.ok)throw new Error(e&&!e.ok?e.error:"no response");E("Deleted"),f(),await r()}catch(e){E("Delete failed: "+(e instanceof Error?e.message:String(e)))}});h.style.color="rgba(255, 120, 120, 0.95)",h.style.borderColor="rgba(255, 80, 80, 0.3)",x.appendChild(o),x.appendChild(n),t.pageUrl&&x.appendChild(i),x.appendChild(h),d.appendChild(g),d.appendChild(m),d.appendChild(x),a.appendChild(d),document.documentElement.appendChild(a);let w=!1,f=()=>{w||(w=!0,a.style.opacity="0",d.style.transform="scale(0.96)",setTimeout(()=>a.remove(),200),document.removeEventListener("keydown",k,!0))},k=e=>{e.key==="Escape"&&(e.stopPropagation(),e.preventDefault(),f())};document.addEventListener("keydown",k,!0),u.addEventListener("click",f),a.addEventListener("click",e=>{e.target===a&&f()}),requestAnimationFrame(()=>{a.style.opacity="1",d.style.transform="scale(1)"});try{let e=await chrome.runtime.sendMessage({type:"getScreenshot",id:t.id});if(!e||!e.ok)throw new Error(e&&!e.ok?e.error:"no response");y=e.dataUrl,m.replaceChildren();let s=document.createElement("img");s.src=e.dataUrl,s.style.cssText=`display: block; max-width: 100%; height: auto; ${t.kind==="fullpage"?"":"max-height: 64vh; object-fit: contain;"}`,m.appendChild(s)}catch(e){m.replaceChildren();let s=document.createElement("div");s.style.cssText="padding: 24px; color: rgba(255,120,120,0.85);",s.textContent="Failed to load: "+(e instanceof Error?e.message:String(e)),m.appendChild(s)}};window.__dsdHistory={open:$,isOpen:()=>T}})();})();
